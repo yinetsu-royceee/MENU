@@ -1,0 +1,2957 @@
+//Please don't replace listeners with lambda!
+
+package com.yinetsu.mod.library;
+
+import android.app.Application;
+import android.os.Bundle;
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.PixelFormat;
+import android.graphics.PorterDuff;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.ClipDrawable;
+import android.graphics.drawable.LayerDrawable;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Handler;
+import android.text.Html;
+import android.text.InputFilter;
+import android.text.InputType;
+import android.text.TextUtils;
+import android.text.method.DigitsKeyListener;
+import android.util.Base64;
+import android.util.Log;
+import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.widget.PopupWindow;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.inputmethod.InputMethodManager;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.RelativeLayout;
+import android.widget.ScrollView;
+import android.widget.SeekBar;
+import android.widget.Spinner;
+import android.widget.Switch;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+
+import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static android.view.WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS;
+import static android.widget.RelativeLayout.ALIGN_PARENT_LEFT;
+import static android.widget.RelativeLayout.ALIGN_PARENT_RIGHT;
+import android.graphics.drawable.InsetDrawable;
+
+public class Menu {
+    public static final String TAG = "Mod_Menu";
+
+    // ==================== THEME ENGINE ====================
+    static class ThemeColors {
+        String name;
+        int accent;      // stroke, toggle ON, active tab
+        int accent2;     // secondary accent (gradient end)
+        int btnColor;    // button background
+        int menuBg;      // main menu background
+        int featureBg;   // content area background
+        int sidebarBg;   // sidebar background
+        int textColor;   // primary text
+        int textColor2;  // secondary text
+        int toggleOff;   // toggle OFF color
+        int btnOn;       // button ON state
+        int btnOff;      // button OFF state
+
+        ThemeColors(String name, int accent, int accent2, int btnColor, int menuBg,
+                    int featureBg, int sidebarBg, int textColor, int textColor2,
+                    int toggleOff, int btnOn, int btnOff) {
+            this.name = name;
+            this.accent = accent;
+            this.accent2 = accent2;
+            this.btnColor = btnColor;
+            this.menuBg = menuBg;
+            this.featureBg = featureBg;
+            this.sidebarBg = sidebarBg;
+            this.textColor = textColor;
+            this.textColor2 = textColor2;
+            this.toggleOff = toggleOff;
+            this.btnOn = btnOn;
+            this.btnOff = btnOff;
+        }
+    }
+
+    static final ThemeColors[] THEMES = new ThemeColors[]{
+        new ThemeColors("Cyberpunk Yellow", Color.parseColor("#FCEE0A"), Color.parseColor("#FF0080"), Color.parseColor("#2A2200"), Color.parseColor("#F00A0A00"), Color.parseColor("#E01A1A00"), Color.parseColor("#E0080800"), Color.parseColor("#FCEE0A"), Color.parseColor("#FFF9C4"), Color.parseColor("#827717"), Color.parseColor("#F57F17"), Color.parseColor("#827717")),
+        new ThemeColors("Classic Cyan",    Color.parseColor("#00E5FF"), Color.parseColor("#00B8D4"), Color.parseColor("#1E2B3C"), Color.parseColor("#F00D131C"), Color.parseColor("#E0131C26"), Color.parseColor("#E0090E14"), Color.parseColor("#65F4FF"), Color.parseColor("#FFFFFF"), Color.parseColor("#455A64"), Color.parseColor("#00838F"), Color.parseColor("#263238")),
+        new ThemeColors("Matrix Green",    Color.parseColor("#00FF41"), Color.parseColor("#00C853"), Color.parseColor("#0D2818"), Color.parseColor("#F0000A00"), Color.parseColor("#E0001200"), Color.parseColor("#E0000800"), Color.parseColor("#00FF41"), Color.parseColor("#B9F6CA"), Color.parseColor("#1B5E20"), Color.parseColor("#2E7D32"), Color.parseColor("#1B5E20")),
+        new ThemeColors("Nebula Purple",   Color.parseColor("#B388FF"), Color.parseColor("#E040FB"), Color.parseColor("#2A1B3D"), Color.parseColor("#F0120A1A"), Color.parseColor("#E01A0F2E"), Color.parseColor("#E00A0514"), Color.parseColor("#B388FF"), Color.parseColor("#EDE7F6"), Color.parseColor("#4A148C"), Color.parseColor("#6A1B9A"), Color.parseColor("#311B92")),
+        new ThemeColors("Galaxy Blue",     Color.parseColor("#2196F3"), Color.parseColor("#00BCD4"), Color.parseColor("#0D1B3D"), Color.parseColor("#F0000A1A"), Color.parseColor("#E000102E"), Color.parseColor("#E0000514"), Color.parseColor("#2196F3"), Color.parseColor("#BBDEFB"), Color.parseColor("#1565C0"), Color.parseColor("#1976D2"), Color.parseColor("#0D47A1")),
+        new ThemeColors("Blood Red",       Color.parseColor("#FF1744"), Color.parseColor("#D50000"), Color.parseColor("#2A0A0A"), Color.parseColor("#F00A0000"), Color.parseColor("#E01A0000"), Color.parseColor("#E0080000"), Color.parseColor("#FF1744"), Color.parseColor("#FFCDD2"), Color.parseColor("#B71C1C"), Color.parseColor("#C62828"), Color.parseColor("#8E0000")),
+        new ThemeColors("Emerald",         Color.parseColor("#00E676"), Color.parseColor("#00BFA5"), Color.parseColor("#0D2A1A"), Color.parseColor("#F0000A05"), Color.parseColor("#E000120A"), Color.parseColor("#E0000804"), Color.parseColor("#00E676"), Color.parseColor("#B9F6CA"), Color.parseColor("#1B5E20"), Color.parseColor("#2E7D32"), Color.parseColor("#1B5E20")),
+        new ThemeColors("Rose Gold",       Color.parseColor("#FF6F91"), Color.parseColor("#FFB6C1"), Color.parseColor("#2A1A1F"), Color.parseColor("#F01A0A0F"), Color.parseColor("#E01F0F14"), Color.parseColor("#E00F0509"), Color.parseColor("#FF6F91"), Color.parseColor("#FCE4EC"), Color.parseColor("#880E4F"), Color.parseColor("#AD1457"), Color.parseColor("#560027")),
+        new ThemeColors("Midnight Blue",   Color.parseColor("#3F51B5"), Color.parseColor("#5C6BC0"), Color.parseColor("#1A1F3D"), Color.parseColor("#F0000A1A"), Color.parseColor("#E000102E"), Color.parseColor("#E0000514"), Color.parseColor("#3F51B5"), Color.parseColor("#C5CAE9"), Color.parseColor("#1A237E"), Color.parseColor("#283593"), Color.parseColor("#0D1350")),
+        new ThemeColors("Sunset Orange",   Color.parseColor("#FF6D00"), Color.parseColor("#FF3D00"), Color.parseColor("#2A1500"), Color.parseColor("#F00A0500"), Color.parseColor("#E01A0F00"), Color.parseColor("#E0080400"), Color.parseColor("#FF6D00"), Color.parseColor("#FFE0B2"), Color.parseColor("#E65100"), Color.parseColor("#EF6C00"), Color.parseColor("#BF360C")),
+        new ThemeColors("Ice Blue",        Color.parseColor("#81D4FA"), Color.parseColor("#4FC3F7"), Color.parseColor("#1A2A3D"), Color.parseColor("#F0000A14"), Color.parseColor("#E000101F"), Color.parseColor("#E000080F"), Color.parseColor("#81D4FA"), Color.parseColor("#E1F5FE"), Color.parseColor("#0277BD"), Color.parseColor("#039BE5"), Color.parseColor("#01579B")),
+        new ThemeColors("Toxic Green",     Color.parseColor("#AEEA00"), Color.parseColor("#76FF03"), Color.parseColor("#1A2A00"), Color.parseColor("#F00A0A00"), Color.parseColor("#E01A1A00"), Color.parseColor("#E0080800"), Color.parseColor("#AEEA00"), Color.parseColor("#F1F8E9"), Color.parseColor("#827717"), Color.parseColor("#9E9D24"), Color.parseColor("#827717")),
+        new ThemeColors("Royal Purple",    Color.parseColor("#673AB7"), Color.parseColor("#9575CD"), Color.parseColor("#1F1A3D"), Color.parseColor("#F00A051A"), Color.parseColor("#E00F0A2E"), Color.parseColor("#E0050314"), Color.parseColor("#673AB7"), Color.parseColor("#D1C4E9"), Color.parseColor("#311B92"), Color.parseColor("#4527A0"), Color.parseColor("#1A0D50")),
+        new ThemeColors("Crimson",         Color.parseColor("#D32F2F"), Color.parseColor("#B71C1C"), Color.parseColor("#2A0A0A"), Color.parseColor("#F00A0000"), Color.parseColor("#E01A0000"), Color.parseColor("#E0080000"), Color.parseColor("#D32F2F"), Color.parseColor("#FFCDD2"), Color.parseColor("#B71C1C"), Color.parseColor("#C62828"), Color.parseColor("#8E0000")),
+        new ThemeColors("Teal",            Color.parseColor("#009688"), Color.parseColor("#00BCD4"), Color.parseColor("#0D2A28"), Color.parseColor("#F0000A0A"), Color.parseColor("#E0001214"), Color.parseColor("#E0000809"), Color.parseColor("#009688"), Color.parseColor("#B2DFDB"), Color.parseColor("#004D40"), Color.parseColor("#00695C"), Color.parseColor("#003D33")),
+        new ThemeColors("Amber Gold",      Color.parseColor("#FFC107"), Color.parseColor("#FFB300"), Color.parseColor("#2A1F00"), Color.parseColor("#F00A0800"), Color.parseColor("#E01A1400"), Color.parseColor("#E0080600"), Color.parseColor("#FFC107"), Color.parseColor("#FFF8E1"), Color.parseColor("#FF6F00"), Color.parseColor("#FF8F00"), Color.parseColor("#E65100")),
+        new ThemeColors("Magenta",         Color.parseColor("#E91E63"), Color.parseColor("#FF4081"), Color.parseColor("#2A0A1A"), Color.parseColor("#F00A0014"), Color.parseColor("#E01A001F"), Color.parseColor("#E008000F"), Color.parseColor("#E91E63"), Color.parseColor("#F8BBD0"), Color.parseColor("#880E4F"), Color.parseColor("#AD1457"), Color.parseColor("#560027")),
+        new ThemeColors("Lime",            Color.parseColor("#CDDC39"), Color.parseColor("#C0CA33"), Color.parseColor("#1A2A00"), Color.parseColor("#F00A0A00"), Color.parseColor("#E01A1A00"), Color.parseColor("#E0080800"), Color.parseColor("#CDDC39"), Color.parseColor("#F9FBE7"), Color.parseColor("#827717"), Color.parseColor("#9E9D24"), Color.parseColor("#827717")),
+        new ThemeColors("Steel Gray",      Color.parseColor("#607D8B"), Color.parseColor("#78909C"), Color.parseColor("#1A2A2E"), Color.parseColor("#F00A0F12"), Color.parseColor("#E00F1417"), Color.parseColor("#E0080A0C"), Color.parseColor("#607D8B"), Color.parseColor("#CFD8DC"), Color.parseColor("#37474F"), Color.parseColor("#455A64"), Color.parseColor("#263238")),
+        new ThemeColors("RGB Rainbow",     Color.parseColor("#00E5FF"), Color.parseColor("#E040FB"), Color.parseColor("#1A1A2A"), Color.parseColor("#F00A0A14"), Color.parseColor("#E00F0F1A"), Color.parseColor("#E005050A"), Color.parseColor("#65F4FF"), Color.parseColor("#FFFFFF"), Color.parseColor("#455A64"), Color.parseColor("#00838F"), Color.parseColor("#263238"))
+		,
+        new ThemeColors("Solar Flare", Color.parseColor("#FFB300"), Color.parseColor("#FF5722"), Color.parseColor("#281900"), Color.parseColor("#F0120D05"), Color.parseColor("#E0211306"), Color.parseColor("#E00D0803"), Color.parseColor("#FFE082"), Color.parseColor("#FFF3E0"), Color.parseColor("#8D4B00"), Color.parseColor("#C46A00"), Color.parseColor("#663300")),
+        new ThemeColors("Arctic Aurora", Color.parseColor("#80DEEA"), Color.parseColor("#B2FF59"), Color.parseColor("#10272B"), Color.parseColor("#F007171B"), Color.parseColor("#E00D2429"), Color.parseColor("#E0061317"), Color.parseColor("#B2EBF2"), Color.parseColor("#E0F7FA"), Color.parseColor("#28545A"), Color.parseColor("#176B70"), Color.parseColor("#123B42")),
+        new ThemeColors("Violet Haze", Color.parseColor("#7C4DFF"), Color.parseColor("#EA80FC"), Color.parseColor("#211333"), Color.parseColor("#F010091A"), Color.parseColor("#E01A1028"), Color.parseColor("#E00B0612"), Color.parseColor("#D1C4E9"), Color.parseColor("#F3E5F5"), Color.parseColor("#512D78"), Color.parseColor("#6336A8"), Color.parseColor("#321B50")),
+        new ThemeColors("Deep Ocean", Color.parseColor("#006064"), Color.parseColor("#00E5FF"), Color.parseColor("#09272B"), Color.parseColor("#F0041316"), Color.parseColor("#E0092126"), Color.parseColor("#E0030D10"), Color.parseColor("#80DEEA"), Color.parseColor("#E0F7FA"), Color.parseColor("#004D55"), Color.parseColor("#006D78"), Color.parseColor("#00343A")),
+        new ThemeColors("Cherry Blossom", Color.parseColor("#F48FB1"), Color.parseColor("#CE93D8"), Color.parseColor("#2A1420"), Color.parseColor("#F0160A11"), Color.parseColor("#E024101B"), Color.parseColor("#E00D060B"), Color.parseColor("#F8BBD0"), Color.parseColor("#FCE4EC"), Color.parseColor("#8E4260"), Color.parseColor("#A94D72"), Color.parseColor("#5B2940")),
+        new ThemeColors("Lava Core", Color.parseColor("#FF3D00"), Color.parseColor("#FF9100"), Color.parseColor("#2A1005"), Color.parseColor("#F0150700"), Color.parseColor("#E0240D03"), Color.parseColor("#E00B0401"), Color.parseColor("#FFAB91"), Color.parseColor("#FBE9E7"), Color.parseColor("#8C2B00"), Color.parseColor("#B33A00"), Color.parseColor("#5A1C00")),
+        new ThemeColors("Mint Glass", Color.parseColor("#69F0AE"), Color.parseColor("#64FFDA"), Color.parseColor("#10251F"), Color.parseColor("#F007140F"), Color.parseColor("#E00D2019"), Color.parseColor("#E0050D0A"), Color.parseColor("#A7FFEB"), Color.parseColor("#E0F2F1"), Color.parseColor("#28664F"), Color.parseColor("#287B65"), Color.parseColor("#164A3B")),
+        new ThemeColors("Plasma Pink", Color.parseColor("#FF2D95"), Color.parseColor("#FF80AB"), Color.parseColor("#2A1020"), Color.parseColor("#F0160812"), Color.parseColor("#E024101B"), Color.parseColor("#E00D050A"), Color.parseColor("#FF80AB"), Color.parseColor("#FCE4EC"), Color.parseColor("#8E2458"), Color.parseColor("#B82F70"), Color.parseColor("#5A1738")),
+        new ThemeColors("Cobalt Edge", Color.parseColor("#2962FF"), Color.parseColor("#82B1FF"), Color.parseColor("#101B35"), Color.parseColor("#F0070D1B"), Color.parseColor("#E00D1730"), Color.parseColor("#E0050A16"), Color.parseColor("#82B1FF"), Color.parseColor("#E3F2FD"), Color.parseColor("#244A9A"), Color.parseColor("#285BC0"), Color.parseColor("#142E68")),
+        new ThemeColors("Copper Luxe", Color.parseColor("#D88A4A"), Color.parseColor("#FFC078"), Color.parseColor("#2A1B10"), Color.parseColor("#F0160E08"), Color.parseColor("#E024170D"), Color.parseColor("#E00D0804"), Color.parseColor("#FFCC9A"), Color.parseColor("#FBE9D7"), Color.parseColor("#80502A"), Color.parseColor("#A86A35"), Color.parseColor("#593719")),
+        new ThemeColors("Phantom White", Color.parseColor("#CFD8DC"), Color.parseColor("#FFFFFF"), Color.parseColor("#252A30"), Color.parseColor("#F0101317"), Color.parseColor("#E01B2026"), Color.parseColor("#E0090C10"), Color.parseColor("#ECEFF1"), Color.parseColor("#FFFFFF"), Color.parseColor("#56616B"), Color.parseColor("#687782"), Color.parseColor("#343D45")),
+        new ThemeColors("Ultraviolet", Color.parseColor("#651FFF"), Color.parseColor("#D500F9"), Color.parseColor("#1A1030"), Color.parseColor("#F00C0718"), Color.parseColor("#E0160D25"), Color.parseColor("#E007040F"), Color.parseColor("#B388FF"), Color.parseColor("#F3E5F5"), Color.parseColor("#452080"), Color.parseColor("#5E2EB0"), Color.parseColor("#2A1555")),
+        new ThemeColors("Tropical Wave", Color.parseColor("#00BFA5"), Color.parseColor("#AEEA00"), Color.parseColor("#0A2821"), Color.parseColor("#F004150F"), Color.parseColor("#E00A2119"), Color.parseColor("#E0030D09"), Color.parseColor("#A7FFEB"), Color.parseColor("#F1F8E9"), Color.parseColor("#17634F"), Color.parseColor("#1A8064"), Color.parseColor("#104633")),
+        new ThemeColors("Electric Peach", Color.parseColor("#FF8A65"), Color.parseColor("#FFD180"), Color.parseColor("#2A1712"), Color.parseColor("#F0160B08"), Color.parseColor("#E024130F"), Color.parseColor("#E00D0604"), Color.parseColor("#FFAB91"), Color.parseColor("#FBE9E7"), Color.parseColor("#8C4936"), Color.parseColor("#B85F43"), Color.parseColor("#5A3022")),
+        new ThemeColors("Sapphire Mist", Color.parseColor("#448AFF"), Color.parseColor("#80D8FF"), Color.parseColor("#101F35"), Color.parseColor("#F0080F1C"), Color.parseColor("#E00E192C"), Color.parseColor("#E0050A14"), Color.parseColor("#90CAF9"), Color.parseColor("#E3F2FD"), Color.parseColor("#28528A"), Color.parseColor("#326CB5"), Color.parseColor("#19395F")),
+        new ThemeColors("Cyber Lime", Color.parseColor("#C6FF00"), Color.parseColor("#76FF03"), Color.parseColor("#202A00"), Color.parseColor("#F0101500"), Color.parseColor("#E01B2400"), Color.parseColor("#E0090C00"), Color.parseColor("#DCE775"), Color.parseColor("#F9FBE7"), Color.parseColor("#657A00"), Color.parseColor("#829900"), Color.parseColor("#3E4B00")),
+        new ThemeColors("Amethyst Flame", Color.parseColor("#AA00FF"), Color.parseColor("#FF4081"), Color.parseColor("#24102C"), Color.parseColor("#F0120718"), Color.parseColor("#E01D0D24"), Color.parseColor("#E009040D"), Color.parseColor("#EA80FC"), Color.parseColor("#F3E5F5"), Color.parseColor("#67227A"), Color.parseColor("#862EA0"), Color.parseColor("#401650")),
+        new ThemeColors("Glacier Mint", Color.parseColor("#84FFFF"), Color.parseColor("#A7FFEB"), Color.parseColor("#102626"), Color.parseColor("#F0071414"), Color.parseColor("#E00D2020"), Color.parseColor("#E0050C0C"), Color.parseColor("#B2DFDB"), Color.parseColor("#E0F2F1"), Color.parseColor("#326A68"), Color.parseColor("#3D8984"), Color.parseColor("#1E4B49")),
+        new ThemeColors("Desert Dusk", Color.parseColor("#FFAB40"), Color.parseColor("#FF7043"), Color.parseColor("#2A1B12"), Color.parseColor("#F0160D08"), Color.parseColor("#E024160D"), Color.parseColor("#E00D0804"), Color.parseColor("#FFCC80"), Color.parseColor("#FBE9E7"), Color.parseColor("#89552B"), Color.parseColor("#AD6937"), Color.parseColor("#593719")),
+        new ThemeColors("Neon Orchid", Color.parseColor("#E040FB"), Color.parseColor("#7C4DFF"), Color.parseColor("#24102A"), Color.parseColor("#F0120818"), Color.parseColor("#E01E0D24"), Color.parseColor("#E009040D"), Color.parseColor("#EA80FC"), Color.parseColor("#F3E5F5"), Color.parseColor("#692A7A"), Color.parseColor("#8535A0"), Color.parseColor("#401950")),
+        new ThemeColors("Aqua Chrome", Color.parseColor("#18FFFF"), Color.parseColor("#40C4FF"), Color.parseColor("#0D252B"), Color.parseColor("#F0061316"), Color.parseColor("#E00B2026"), Color.parseColor("#E0030C10"), Color.parseColor("#84FFFF"), Color.parseColor("#E1F5FE"), Color.parseColor("#205C69"), Color.parseColor("#267B8C"), Color.parseColor("#143D49")),
+        new ThemeColors("Inferno Gold", Color.parseColor("#FF6F00"), Color.parseColor("#FFD740"), Color.parseColor("#2A1905"), Color.parseColor("#F0150C02"), Color.parseColor("#E0241504"), Color.parseColor("#E00D0801"), Color.parseColor("#FFCC80"), Color.parseColor("#FFF8E1"), Color.parseColor("#895000"), Color.parseColor("#AA6900"), Color.parseColor("#593700")),
+        new ThemeColors("Forest Night", Color.parseColor("#2E7D32"), Color.parseColor("#B2FF59"), Color.parseColor("#102014"), Color.parseColor("#F0071108"), Color.parseColor("#E00D1C10"), Color.parseColor("#E0050A06"), Color.parseColor("#A5D6A7"), Color.parseColor("#E8F5E9"), Color.parseColor("#285A2C"), Color.parseColor("#34763A"), Color.parseColor("#173D1B")),
+        new ThemeColors("Dreamwave", Color.parseColor("#7E57C2"), Color.parseColor("#26C6DA"), Color.parseColor("#1C1530"), Color.parseColor("#F00D0918"), Color.parseColor("#E0171126"), Color.parseColor("#E007040F"), Color.parseColor("#B39DDB"), Color.parseColor("#EDE7F6"), Color.parseColor("#514078"), Color.parseColor("#65509A"), Color.parseColor("#30264F")),
+        new ThemeColors("Neon Coral", Color.parseColor("#FF5252"), Color.parseColor("#FFAB91"), Color.parseColor("#2A1012"), Color.parseColor("#F0150809"), Color.parseColor("#E0241012"), Color.parseColor("#E00D0506"), Color.parseColor("#FF8A80"), Color.parseColor("#FBE9E7"), Color.parseColor("#8D3034"), Color.parseColor("#B83D43"), Color.parseColor("#5D2024")),
+        new ThemeColors("Blue Steel", Color.parseColor("#78909C"), Color.parseColor("#4FC3F7"), Color.parseColor("#18232A"), Color.parseColor("#F00B1115"), Color.parseColor("#E0141E24"), Color.parseColor("#E0060B0E"), Color.parseColor("#B0BEC5"), Color.parseColor("#ECEFF1"), Color.parseColor("#40535D"), Color.parseColor("#536E7A"), Color.parseColor("#293B44")),
+        new ThemeColors("Candy Flux", Color.parseColor("#FF4081"), Color.parseColor("#18FFFF"), Color.parseColor("#2A1020"), Color.parseColor("#F0150810"), Color.parseColor("#E024101A"), Color.parseColor("#E00D050A"), Color.parseColor("#FF80AB"), Color.parseColor("#E0F7FA"), Color.parseColor("#8E2858"), Color.parseColor("#B33570"), Color.parseColor("#5A1738")),
+        new ThemeColors("Solaris", Color.parseColor("#FFCA28"), Color.parseColor("#FF7043"), Color.parseColor("#29200A"), Color.parseColor("#F0151004"), Color.parseColor("#E0231B08"), Color.parseColor("#E00D0A02"), Color.parseColor("#FFE082"), Color.parseColor("#FFF8E1"), Color.parseColor("#80631A"), Color.parseColor("#A47D20"), Color.parseColor("#59440F")),
+        new ThemeColors("Nightshade", Color.parseColor("#9575CD"), Color.parseColor("#4DD0E1"), Color.parseColor("#1B1428"), Color.parseColor("#F00C0914"), Color.parseColor("#E0171120"), Color.parseColor("#E007040A"), Color.parseColor("#D1C4E9"), Color.parseColor("#E0F7FA"), Color.parseColor("#51416E"), Color.parseColor("#65528A"), Color.parseColor("#302847")),
+        new ThemeColors("Prismatic Ice", Color.parseColor("#80D8FF"), Color.parseColor("#EA80FC"), Color.parseColor("#172432"), Color.parseColor("#F00A111A"), Color.parseColor("#E0141E2A"), Color.parseColor("#E0060B10"), Color.parseColor("#B3E5FC"), Color.parseColor("#F3E5F5"), Color.parseColor("#3D5D78"), Color.parseColor("#4C7294"), Color.parseColor("#263F59"))
+    };
+
+    ThemeColors currentTheme = THEMES[0];
+    private final java.util.WeakHashMap<TextView, Integer> originalTextColors =
+	new java.util.WeakHashMap<TextView, Integer>();
+    private static final java.util.HashMap<String, Boolean> localToggleCache = new java.util.HashMap<String, Boolean>();
+    private static final java.util.HashMap<String, Integer> localIntCache = new java.util.HashMap<String, Integer>();
+    private static final java.util.HashMap<String, Long> localLongCache = new java.util.HashMap<String, Long>();
+    private static final java.util.HashMap<String, String> localStringCache = new java.util.HashMap<String, String>();
+
+    // Live colors (updated by applyTheme)
+    int TEXT_COLOR = currentTheme.textColor;
+    int TEXT_COLOR_2 = currentTheme.textColor2;
+    int BTN_COLOR = currentTheme.btnColor;
+    int MENU_BG_COLOR = currentTheme.menuBg;
+    int MENU_FEATURE_BG_COLOR = currentTheme.featureBg;
+    int SIDEBAR_BG_COLOR = currentTheme.sidebarBg;
+    int ToggleON = currentTheme.accent;
+    int ToggleOFF = currentTheme.toggleOff;
+    int BtnON = currentTheme.btnOn;
+    int BtnOFF = currentTheme.btnOff;
+    int CategoryBG = currentTheme.featureBg;
+    int SeekBarColor = currentTheme.accent;
+    int SeekBarProgressColor = currentTheme.accent2;
+    int CheckBoxColor = currentTheme.accent;
+    int RadioColor = currentTheme.accent2;
+    int CollapseColor = currentTheme.sidebarBg;
+    String NumberTxtColor = String.format("#%06X", (0xFFFFFF & currentTheme.accent));
+
+    int MENU_WIDTH = 400;
+    int MENU_HEIGHT = 360;
+    int POS_X = 0;
+    int POS_Y = 100;
+
+    float MENU_CORNER = 22f;
+    int ICON_SIZE = 70;
+    float ICON_ALPHA = 1.0f;
+
+    RelativeLayout mCollapsed, mRootContainer;
+    LinearLayout mExpanded, mods, mSettings, mCollapse;
+
+    ScrollView tabScrollView;
+    LinearLayout tabContainer;
+    String currentCategory = "";
+    String[] globalFeatureList;
+
+    LinearLayout.LayoutParams scrlLLExpanded, scrlLL;
+    WindowManager mWindowManager;
+    WindowManager.LayoutParams vmParams;
+    ImageView startimage;
+    FrameLayout rootFrame;
+    ScrollView scrollView;
+    Handler rgbHandler;
+    Runnable rgbRunnable;
+    long lastRainbowTextUpdate = 0L;
+    private boolean hiddenByUser = false;
+    private static Menu instance;
+    boolean stopChecking, overlayRequired;
+    Context getContext;
+    private boolean lastRainbowState = false;
+
+    // For live theming
+    LinearLayout mainBodyRef;
+    RelativeLayout titleTextRef;
+    TextView titleRef, subTitleRef, settingsRef;
+    Button hideBtnRef, closeBtnRef;
+    EditText searchBar;
+    EditText activeImeField;
+    View activeInputEditor;
+    View neonDividerRef;
+    int activeInputFeatureId = -1;
+    GradientDrawable iconBgRef;
+    GradientDrawable iconInnerBgRef;
+
+    native void Init(Context context, TextView title, TextView subTitle);
+    native String Icon();
+    native String IconWebViewData();
+    native String[] GetFeatureList();
+    native String[] SettingsList();
+    native boolean IsGameLibLoaded();
+
+    public Menu(final Context context) {
+        instance = this;
+        getContext = context;
+        Preferences.context = context;
+
+        // Load theme by stable name first. Migrate legacy index-only preferences safely.
+        android.content.SharedPreferences themePrefs =
+            getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE);
+        int savedTheme = 0; // Cyberpunk Yellow is the first-run default.
+        String savedThemeName = themePrefs.getString("theme_name", null);
+        if (savedThemeName != null) {
+            for (int i = 0; i < THEMES.length; i++) {
+                if (THEMES[i].name.equals(savedThemeName)) {
+                    savedTheme = i;
+                    break;
+                }
+            }
+        } else if (themePrefs.contains("theme")) {
+            int legacyIndex = themePrefs.getInt("theme", 0);
+            // Old order: Classic Cyan, Matrix Green, Nebula Purple, Cyberpunk Yellow...
+            if (legacyIndex == 0) savedTheme = 1;
+            else if (legacyIndex == 1) savedTheme = 2;
+            else if (legacyIndex == 2) savedTheme = 3;
+            else if (legacyIndex == 3) savedTheme = 0;
+            else if (legacyIndex >= 4 && legacyIndex < THEMES.length) savedTheme = legacyIndex;
+        }
+        if (savedTheme < 0 || savedTheme >= THEMES.length) savedTheme = 0;
+        currentTheme = THEMES[savedTheme];
+        themePrefs.edit().putString("theme_name", currentTheme.name)
+            .putInt("theme", savedTheme).apply();
+        applyThemeToFields();
+
+        rootFrame = new FrameLayout(context);
+        rootFrame.setOnTouchListener(onTouchListener());
+        mRootContainer = new RelativeLayout(context);
+        mCollapsed = new RelativeLayout(context);
+        mCollapsed.setVisibility(View.VISIBLE);
+        mCollapsed.setAlpha(ICON_ALPHA);
+
+        // ========== MAIN MENU BOX ==========
+        mExpanded = new LinearLayout(context);
+        mExpanded.setVisibility(View.GONE);
+        mExpanded.setOrientation(LinearLayout.VERTICAL);
+        mExpanded.setPadding(dp(13), dp(13), dp(13), dp(12));
+        mExpanded.setClipChildren(false);
+        mExpanded.setClipToPadding(false);
+
+        int screenHeight = context.getResources().getDisplayMetrics().heightPixels;
+        boolean isExpanded = Preferences.loadPrefBool("Resize UI vertically", -3, false);
+        int menuMaxHeight = isExpanded ? (int) (screenHeight * 0.95f) : Math.max(dp(340), (int) (screenHeight * 0.68f));
+        mExpanded.setLayoutParams(new RelativeLayout.LayoutParams(dp(MENU_WIDTH), menuMaxHeight));
+
+        final GradientDrawable gdMenuBody = new GradientDrawable();
+        gdMenuBody.setCornerRadius(dp((int) MENU_CORNER));
+        gdMenuBody.setColors(new int[]{blendColors(MENU_BG_COLOR, ToggleON, 0.13f), MENU_BG_COLOR, blendColors(MENU_BG_COLOR, Color.BLACK, 0.30f)});
+        gdMenuBody.setOrientation(GradientDrawable.Orientation.TL_BR);
+        gdMenuBody.setStroke(dp(1), blendColors(ToggleON, MENU_BG_COLOR, 0.24f));
+        mExpanded.setBackground(gdMenuBody);
+
+        // Animated UI stroke: every theme has its own motion profile.
+        rgbHandler = new Handler();
+        rgbRunnable = new Runnable() {
+            @Override public void run() {
+                try {
+                    long now = System.currentTimeMillis();
+                    android.content.SharedPreferences sp = getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE);
+                    int motionColor = getAnimatedStrokeColor(now);
+                    int glow = clampUiValue(sp.getInt("f_-14", 45), 0, 100, 45);
+                    int gradientMix = clampUiValue(sp.getInt("f_-16", 45), 0, 100, 45);
+                    boolean neonPower = sp.getBoolean("f_-13", true);
+                    boolean rainbowText = sp.getBoolean("f_-11", true);
+                    boolean motionEnabled = sp.getBoolean("f_-17", true);
+
+                    // FIX: I-refresh agad pag in-OFF ang Rainbow para bumalik sa tamang static theme colors
+                    if (rainbowText != lastRainbowState) {
+                        lastRainbowState = rainbowText;
+                        if (!rainbowText) {
+                            originalTextColors.clear();
+                            applyThemeLive();
+                        }
+                    }
+
+                    int strokeColor = neonPower ? motionColor : ToggleON;
+                    if (motionEnabled) {
+                        gdMenuBody.setStroke(dp(2), strokeColor);
+                        float mix = 0.025f + (gradientMix / 100.0f) * 0.18f;
+                        gdMenuBody.setColors(new int[]{blendColors(MENU_BG_COLOR, motionColor, mix), MENU_BG_COLOR, blendColors(MENU_BG_COLOR, motionColor, mix * 0.42f)});
+                    } else {
+                        gdMenuBody.setStroke(dp(2), ToggleON);
+                        gdMenuBody.setColors(new int[]{blendColors(MENU_BG_COLOR, ToggleON, 0.08f), MENU_BG_COLOR, MENU_BG_COLOR});
+                    }
+                    if (iconBgRef != null && startimage != null) {
+                        iconBgRef.setStroke(dp(2 + (neonPower ? glow / 55 : 0)), strokeColor);
+                        if (iconInnerBgRef != null) {
+                            float backingMix = 0.07f + (gradientMix / 100.0f) * 0.08f;
+                            int backingAccent = motionEnabled ? motionColor : ToggleON;
+                            iconInnerBgRef.setColors(new int[]{
+														 blendColors(MENU_FEATURE_BG_COLOR, backingAccent, backingMix),
+														 blendColors(MENU_BG_COLOR, backingAccent, backingMix * 0.45f),
+														 MENU_BG_COLOR
+													 });
+                        }
+                        startimage.invalidate();
+                    }
+                    if (titleRef != null) {
+                        if (neonPower && glow > 0) titleRef.setShadowLayer(glow / 12.0f, 0f, 0f, strokeColor);
+                        else titleRef.setShadowLayer(0f, 0f, 0f, Color.TRANSPARENT);
+                    }
+                    if (now - lastRainbowTextUpdate >= 145L && mExpanded.getVisibility() == View.VISIBLE) {
+                        if (rainbowText && motionEnabled) {
+                            int[] textIndex = new int[]{0};
+                            animateRainbowText(mExpanded, now, textIndex);
+                        } else {
+                            restoreStaticTextColors(mExpanded);
+                        }
+                        lastRainbowTextUpdate = now;
+                    }
+                    mExpanded.invalidate();
+                } catch (Throwable ignored) {
+                } finally {
+                    if (rgbHandler != null) rgbHandler.postDelayed(this, 70);
+                }
+            }
+        };
+        rgbHandler.post(rgbRunnable);
+
+        // ========== ICON ==========
+        startimage = new ImageView(context);
+        startimage.setLayoutParams(new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT));
+        int applyDimension = (int) TypedValue.applyDimension(1, ICON_SIZE, context.getResources().getDisplayMetrics());
+        startimage.getLayoutParams().height = applyDimension;
+        startimage.getLayoutParams().width = applyDimension;
+        // Panatilihin ang CENTER_CROP para punuin yung space
+        startimage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+// Theme-colored backing sits behind transparent/rounded parts of the artwork.
+        // It follows the active theme so the icon and its border look like one piece.
+        iconInnerBgRef = new GradientDrawable();
+        iconInnerBgRef.setShape(GradientDrawable.RECTANGLE);
+        iconInnerBgRef.setCornerRadius(dp(14));
+        iconInnerBgRef.setColors(new int[]{
+									 blendColors(MENU_FEATURE_BG_COLOR, ToggleON, 0.34f),
+									 blendColors(MENU_BG_COLOR, ToggleON, 0.18f),
+									 MENU_BG_COLOR
+								 });
+        iconInnerBgRef.setOrientation(GradientDrawable.Orientation.TL_BR);
+        startimage.setBackground(iconInnerBgRef);
+        startimage.setClipToOutline(true);
+
+        // Ito ang mismong orange border na ipapatong natin (Foreground)
+        iconBgRef = new GradientDrawable();
+        iconBgRef.setShape(GradientDrawable.RECTANGLE);
+        iconBgRef.setCornerRadius(dp(12)); 
+        iconBgRef.setColor(Color.TRANSPARENT); 
+        iconBgRef.setStroke(dp(3), getAnimatedStrokeColor(System.currentTimeMillis()));
+
+        // I-inset nang kaunti ang stroke para tumapat ito sa mismong artwork,
+        // hindi sa mas malaking outer bounds ng ImageView.
+        android.graphics.drawable.InsetDrawable fittedIconBorder =
+            new android.graphics.drawable.InsetDrawable(iconBgRef, dp(2));
+        if (Build.VERSION.SDK_INT >= 23) {
+            startimage.setForeground(fittedIconBorder);
+        } else {
+            startimage.setBackground(fittedIconBorder);
+        }
+
+        startimage.setPadding(0, 0, 0, 0); // Zero padding para dumikit na talaga
+        boolean zenitsuLoaded = false;
+        try {
+            int zenitsuRes = getContext.getResources().getIdentifier(
+                "floating_ball_on", "drawable", getContext.getPackageName());
+            if (zenitsuRes != 0) {
+                startimage.setImageResource(zenitsuRes);
+                zenitsuLoaded = true;
+            }
+        } catch (Throwable ignored) { }
+        if (!zenitsuLoaded) {
+            try {
+                java.io.InputStream is = getContext.getAssets().open("floating_ball_on.png");
+                android.graphics.Bitmap bitmap = BitmapFactory.decodeStream(is);
+                if (is != null) is.close();
+                if (bitmap != null) {
+                    startimage.setImageBitmap(bitmap);
+                    zenitsuLoaded = true;
+                }
+            } catch (Throwable ignored) { }
+        }
+        if (!zenitsuLoaded) {
+            try {
+                byte[] decode = Base64.decode(Icon(), 0);
+                startimage.setImageBitmap(BitmapFactory.decodeByteArray(decode, 0, decode.length));
+            } catch (Throwable ignored) {
+                Log.e(TAG, "Zenitsu floating icon asset is missing.");
+            }
+        }
+        ((ViewGroup.MarginLayoutParams) startimage.getLayoutParams()).topMargin = convertDipToPixels(10);
+        startimage.setOnTouchListener(onTouchListener());
+        startimage.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View view) {
+                    if (isViewCollapsed()) animateMenuOpen();
+                    else animateMenuClose();
+                }
+            });
+
+        final String webIconData = ""; // Pilitin nating i-empty para hindi gamitin ang web icon
+        WebView wView = null;
+        if (webIconData != null && webIconData.length() > 0) {
+            wView = new WebView(context);
+            wView.setLayoutParams(new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT));
+            int applyDimension2 = (int) TypedValue.applyDimension(1, ICON_SIZE, context.getResources().getDisplayMetrics());
+            wView.getLayoutParams().height = applyDimension2;
+            wView.getLayoutParams().width = applyDimension2;
+            wView.loadData("<html><head></head><body style=\"margin:0;padding:0\"><img src=\"" + webIconData + "\" width=\"" + ICON_SIZE + "\" height=\"" + ICON_SIZE + "\"></body></html>", "text/html", "utf-8");
+            wView.setBackgroundColor(0x00000000);
+            wView.setAlpha(ICON_ALPHA);
+            wView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
+            wView.setOnTouchListener(onTouchListener());
+        }
+
+        // ========== TOP BAR ==========
+        titleTextRef = new RelativeLayout(context);
+        titleTextRef.setPadding(dp(9), dp(8), dp(8), dp(8));
+        titleTextRef.setVerticalGravity(Gravity.CENTER_VERTICAL);
+        titleTextRef.setClipChildren(false);
+        titleTextRef.setClipToPadding(false);
+        GradientDrawable titleCardBg = new GradientDrawable();
+        titleCardBg.setCornerRadius(dp(15));
+        titleCardBg.setColors(new int[]{blendColors(MENU_FEATURE_BG_COLOR, ToggleON, 0.19f), blendColors(MENU_BG_COLOR, Color.BLACK, 0.12f)});
+        titleCardBg.setOrientation(GradientDrawable.Orientation.LEFT_RIGHT);
+        titleCardBg.setStroke(dp(1), blendColors(ToggleON, MENU_BG_COLOR, 0.28f));
+        titleTextRef.setBackground(titleCardBg);
+
+        titleRef = new TextView(context);
+        titleRef.setTextColor(TEXT_COLOR);
+        titleRef.setTextSize(17.0f);
+        titleRef.setTypeface(Typeface.create("sans-serif-black", Typeface.BOLD));
+        titleRef.setShadowLayer(7f, 0f, 0f, blendColors(ToggleON, Color.TRANSPARENT, 0.35f));
+        titleRef.setGravity(Gravity.CENTER);
+        titleRef.setText("YIN MOD MENU  •  CYBERPUNK CONTROL DECK  •  ");
+        // True running header: the title itself scrolls continuously when it exceeds the header width.
+        titleRef.setSingleLine(true);
+        titleRef.setEllipsize(TextUtils.TruncateAt.MARQUEE);
+        titleRef.setMarqueeRepeatLimit(-1);
+        titleRef.setHorizontallyScrolling(true);
+        titleRef.setSelected(true);
+        titleRef.setFocusable(true);
+        titleRef.setFocusableInTouchMode(true);
+
+        RelativeLayout.LayoutParams rl = new RelativeLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        rl.addRule(RelativeLayout.CENTER_VERTICAL);
+        rl.leftMargin = dp(8);
+        rl.rightMargin = dp(48); // Space for the gear icon
+        titleRef.setLayoutParams(rl);
+
+        subTitleRef = new TextView(context);
+        subTitleRef.setTextColor(Color.parseColor("#8899AA"));
+        subTitleRef.setTextSize(9.0f);
+        subTitleRef.setText("HONOIKAZUCHI • YINETSU • LIGHT-ZEN • ENGINE • MOD MENU");
+        subTitleRef.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+        subTitleRef.setPadding(dp(3), dp(7), dp(3), dp(9));
+        RelativeLayout.LayoutParams rlSub = new RelativeLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        subTitleRef.setLayoutParams(rlSub);
+
+        settingsRef = new TextView(context);
+        settingsRef.setText(Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M ? "⚙" : "\uD83D\uDD27");
+        settingsRef.setTextColor(TEXT_COLOR);
+        settingsRef.setTypeface(Typeface.DEFAULT_BOLD);
+        settingsRef.setShadowLayer(8f, 0f, 0f, ToggleON);
+        settingsRef.setTextSize(21.0f);
+        settingsRef.setPadding(dp(10), dp(7), dp(10), dp(7));
+        RelativeLayout.LayoutParams rlsettings = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+        rlsettings.addRule(ALIGN_PARENT_RIGHT);
+        rlsettings.addRule(RelativeLayout.CENTER_VERTICAL);
+        settingsRef.setLayoutParams(rlsettings);
+        settingsRef.setOnClickListener(new View.OnClickListener() {
+				boolean settingsOpen;
+				@Override
+				public void onClick(View v) {
+					try {
+						settingsOpen = !settingsOpen;
+						if (settingsOpen) {
+							buildSettingsPanel();
+							scrollView.removeView(mods);
+							scrollView.addView(mSettings);
+							scrollView.scrollTo(0, 0);
+						} else {
+							scrollView.removeView(mSettings);
+							scrollView.addView(mods);
+						}
+					} catch (IllegalStateException e) { }
+				}
+			});
+
+        // ========== SETTINGS LIST ==========
+        mSettings = new LinearLayout(context);
+        mSettings.setOrientation(LinearLayout.VERTICAL);
+
+        // ========== SIDEBAR + CONTENT ==========
+        mainBodyRef = new LinearLayout(context);
+        mainBodyRef.setOrientation(LinearLayout.HORIZONTAL);
+        mainBodyRef.setLayoutParams(new LinearLayout.LayoutParams(MATCH_PARENT, 0, 1.0f));
+
+        GradientDrawable bodyBg = new GradientDrawable();
+        bodyBg.setCornerRadius(dp(12));
+        bodyBg.setColors(new int[]{blendColors(MENU_FEATURE_BG_COLOR, ToggleON, 0.035f), MENU_FEATURE_BG_COLOR, blendColors(MENU_FEATURE_BG_COLOR, Color.BLACK, 0.10f)});
+        bodyBg.setOrientation(GradientDrawable.Orientation.TL_BR);
+        bodyBg.setStroke(dp(1), blendColors(ToggleON, MENU_FEATURE_BG_COLOR, 0.72f));
+        mainBodyRef.setBackground(bodyBg);
+
+        tabScrollView = new ScrollView(context);
+        tabScrollView.setLayoutParams(new LinearLayout.LayoutParams(0, MATCH_PARENT, 0.30f));
+        tabScrollView.setVerticalScrollBarEnabled(false);
+
+        GradientDrawable sideBg = new GradientDrawable();
+        sideBg.setCornerRadii(new float[]{dp(10), dp(10), 0, 0, 0, 0, dp(10), dp(10)});
+        sideBg.setColor(SIDEBAR_BG_COLOR);
+        tabScrollView.setBackground(sideBg);
+
+        tabContainer = new LinearLayout(context);
+        tabContainer.setOrientation(LinearLayout.VERTICAL);
+        tabContainer.setPadding(dp(5), dp(8), dp(5), dp(8));
+        tabScrollView.addView(tabContainer);
+        mainBodyRef.addView(tabScrollView);
+
+        scrollView = new ScrollView(context);
+        scrollView.setLayoutParams(new LinearLayout.LayoutParams(0, MATCH_PARENT, 0.70f));
+        scrollView.setPadding(dp(10), dp(5), dp(5), dp(5));
+        mods = new LinearLayout(context);
+        mods.setOrientation(LinearLayout.VERTICAL);
+        scrollView.addView(mods);
+        mainBodyRef.addView(scrollView);
+
+        // ========== BOTTOM BAR ==========
+        RelativeLayout bottomBar = new RelativeLayout(context);
+        bottomBar.setPadding(0, dp(10), 0, 0);
+        bottomBar.setVerticalGravity(Gravity.CENTER);
+
+        hideBtnRef = new Button(context);
+        RelativeLayout.LayoutParams lParamsHideBtn = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+        lParamsHideBtn.addRule(ALIGN_PARENT_LEFT);
+        hideBtnRef.setLayoutParams(lParamsHideBtn);
+        // Bagong border para sa HIDE/KILL
+        GradientDrawable hideBg = new GradientDrawable();
+        hideBg.setCornerRadius(dp(11));
+        hideBg.setColor(Color.TRANSPARENT);
+        hideBg.setStroke(dp(1), Color.parseColor("#FF5252"));
+        hideBtnRef.setBackground(hideBg);
+        hideBtnRef.setPadding(dp(14), dp(8), dp(14), dp(8));
+        hideBtnRef.setText("HIDE/KILL");
+        hideBtnRef.setTextSize(11f);
+        hideBtnRef.setTextColor(Color.parseColor("#FF5252"));
+        hideBtnRef.setOnClickListener(new View.OnClickListener() {
+				public void onClick(View view) {
+                    if (activeImeField != null) releaseImeFocus(activeImeField);
+                    if (searchBar != null) searchBar.clearFocus();
+                    removeActiveInputEditor();
+                    mExpanded.setVisibility(View.GONE);
+                    mExpanded.setAlpha(1f);
+                    mExpanded.setScaleX(1f);
+                    mExpanded.setScaleY(1f);
+                    mExpanded.setTranslationY(0f);
+                    mExpanded.setRotationX(0f);
+                    mCollapsed.setVisibility(View.VISIBLE);
+                    mCollapsed.setAlpha(0f);
+                    mCollapsed.setScaleX(1f);
+                    mCollapsed.setScaleY(1f);
+                    hiddenByUser = true;
+                    showCustomToast("Hidden • Tap same spot to reopen");
+				}
+			});
+        hideBtnRef.setOnLongClickListener(new View.OnLongClickListener() {
+				public boolean onLongClick(View view) {
+                    try {
+                        if (activeImeField != null) releaseImeFocus(activeImeField);
+                        if (searchBar != null) searchBar.clearFocus();
+                        removeActiveInputEditor();
+                        Class<?> bridge = getBridgeClass(getContext);
+                        if (bridge != null) {
+                            try {
+                                bridge.getDeclaredMethod("resetAllFeatures").invoke(null);
+                            } catch (Throwable ignored) { }
+                        }
+                        showCustomToast("Menu killed • All features reset");
+                        rootFrame.removeView(mRootContainer);
+                        mWindowManager.removeView(rootFrame);
+                    } catch (Throwable ignored) { }
+					return false;
+				}
+			});
+
+        closeBtnRef = new Button(context);
+        RelativeLayout.LayoutParams lParamsCloseBtn = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+        lParamsCloseBtn.addRule(ALIGN_PARENT_RIGHT);
+        closeBtnRef.setLayoutParams(lParamsCloseBtn);
+        // Bagong border para sa MINIMIZE
+        GradientDrawable closeBg = new GradientDrawable();
+        closeBg.setCornerRadius(dp(11));
+        closeBg.setColor(Color.TRANSPARENT);
+        closeBg.setStroke(dp(1), ToggleON); // Gagamit ng kulay ng kasalukuyang theme
+        closeBtnRef.setBackground(closeBg);
+        closeBtnRef.setPadding(dp(14), dp(8), dp(14), dp(8));
+        closeBtnRef.setText("MINIMIZE");
+        closeBtnRef.setTextSize(11f);
+        closeBtnRef.setTextColor(TEXT_COLOR);
+        closeBtnRef.setOnClickListener(new View.OnClickListener() {
+				public void onClick(View view) {
+                    if (activeImeField != null) releaseImeFocus(activeImeField);
+                    if (searchBar != null) searchBar.clearFocus();
+                    removeActiveInputEditor();
+                    animateMenuClose();
+				}
+			});
+
+        // ========== ASSEMBLE ==========
+        mRootContainer.addView(mCollapsed);
+        mRootContainer.addView(mExpanded);
+        if (wView != null) mCollapsed.addView(wView);
+        else mCollapsed.addView(startimage);
+
+        titleTextRef.addView(titleRef);
+        titleTextRef.addView(settingsRef);
+        // ========== SEARCH BAR ==========
+        LinearLayout searchContainer = new LinearLayout(context);
+        searchContainer.setLayoutParams(new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
+        searchContainer.setPadding(dp(10), 0, dp(10), dp(8));
+
+        searchBar = new EditText(context);
+        searchBar.setHint("🔍 Search feature...");
+        searchBar.setTextColor(TEXT_COLOR_2);
+        searchBar.setHintTextColor(Color.parseColor("#66FFFFFF"));
+        searchBar.setTextSize(12f);
+        searchBar.setSingleLine(true);
+        searchBar.setFocusable(true);
+        searchBar.setFocusableInTouchMode(true);
+        searchBar.setImeOptions(android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+        searchBar.setOnTouchListener(new View.OnTouchListener() {
+				@Override public boolean onTouch(View v, MotionEvent event) {
+					if (event.getAction() == MotionEvent.ACTION_UP) requestImeFocus(searchBar);
+					return false;
+				}
+			});
+
+        searchBar.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+				@Override public void onFocusChange(View v, boolean hasFocus) {
+					if (!hasFocus && activeImeField == searchBar) releaseImeFocus(searchBar);
+				}
+			});
+
+        // DONE BUTTON SA KEYBOARD
+        searchBar.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+				@Override
+				public boolean onEditorAction(TextView v, int actionId, android.view.KeyEvent event) {
+					if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE || actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+						searchBar.clearFocus();
+						return true;
+					}
+					return false;
+				}
+			});
+
+        GradientDrawable searchBg = new GradientDrawable();
+        searchBg.setCornerRadius(dp(15));
+        searchBg.setColor(BTN_COLOR);
+        searchBg.setStroke(dp(1), blendColors(ToggleON, BTN_COLOR, 0.22f));
+        searchBar.setBackground(searchBg);
+        searchBar.setPadding(dp(13), dp(10), dp(13), dp(10));
+
+        searchBar.addTextChangedListener(new android.text.TextWatcher() {
+				public void afterTextChanged(android.text.Editable s) {
+					String query = s.toString().toLowerCase().trim();
+					if (globalFeatureList == null) return;
+
+					if (query.isEmpty()) {
+						mods.removeAllViews();
+						featureList(globalFeatureList, mods, true);
+                        searchBar.clearFocus();
+						return;
+					}
+
+					String foundCategory = null;
+					for (String item : globalFeatureList) {
+						if (item.startsWith("Category_")) {
+							foundCategory = item.replace("Category_", "");
+						} else if (item.toLowerCase().contains(query)) {
+							if (foundCategory != null && !currentCategory.equals(foundCategory)) {
+								currentCategory = foundCategory;
+
+                                boolean isRainbowOn = getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).getBoolean("f_-11", true);
+                                // MANUAL NA I-HIGHLIGHT ANG TAMANG TAB
+                                for (int j = 0; j < tabContainer.getChildCount(); j++) {
+                                    View child = tabContainer.getChildAt(j);
+                                    if (child instanceof TextView) {
+                                        TextView b = (TextView) child;
+                                        String text = b.getText().toString();
+                                        GradientDrawable bg = new GradientDrawable();
+                                        bg.setCornerRadius(dp(8));
+                                        if (text.equals(currentCategory)) {
+                                            bg.setColor(blendColors(ToggleON, MENU_BG_COLOR, 0.75f));
+                                            bg.setStroke(dp(2), ToggleON);
+                                            if (!isRainbowOn) b.setTextColor(ToggleON);
+                                        } else {
+                                            bg.setColor(Color.parseColor("#0A0E14"));
+                                            bg.setStroke(dp(1), Color.parseColor("#2A3B4C"));
+                                            if (!isRainbowOn) b.setTextColor(Color.parseColor("#8899AA"));
+                                        }
+                                        b.setBackground(bg);
+                                    }
+                                }
+							}
+							break;
+						}
+					}
+
+					mods.removeAllViews();
+					for (String item : globalFeatureList) {
+						if (!item.startsWith("Category_") && item.toLowerCase().contains(query)) {
+							String[] str = item.split("_");
+							if (str.length > 1) {
+								featureList(new String[]{item}, mods, false);
+							}
+						}
+					}
+				}
+				public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+				public void onTextChanged(CharSequence s, int start, int before, int count) {}
+			});
+
+        searchContainer.addView(searchBar);
+
+        mExpanded.addView(titleTextRef);
+        mExpanded.addView(subTitleRef);
+        neonDividerRef = new View(context);
+        LinearLayout.LayoutParams neonDividerParams = new LinearLayout.LayoutParams(MATCH_PARENT, dp(2));
+        neonDividerParams.setMargins(dp(4), 0, dp(4), dp(8));
+        neonDividerRef.setLayoutParams(neonDividerParams);
+        GradientDrawable neonDividerBg = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+															  new int[]{Color.TRANSPARENT, ToggleON, currentTheme.accent2, Color.TRANSPARENT});
+        neonDividerBg.setCornerRadius(dp(2));
+        neonDividerRef.setBackground(neonDividerBg);
+        mExpanded.addView(neonDividerRef);
+        titleRef.post(new Runnable() {
+				@Override public void run() {
+					titleRef.setSelected(true);
+					titleRef.requestLayout();
+				}
+			});
+        subTitleRef.post(new Runnable() {
+				@Override public void run() {
+					subTitleRef.setSelected(true);
+					subTitleRef.requestLayout();
+				}
+			});
+        mExpanded.addView(searchContainer); // Header marquee stays active while the panel is open.
+        mExpanded.addView(mainBodyRef);
+
+        bottomBar.addView(hideBtnRef);
+        bottomBar.addView(closeBtnRef);
+        mExpanded.addView(bottomBar);
+
+        // ITO ANG MAG-HIDE NG MENU PAG UMALIS KA SA GAME (Fixed for API 29+)
+        try {
+            Application app = (Application) getContext.getApplicationContext();
+            app.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
+					@Override
+					public void onActivityResumed(Activity activity) {
+						if (rootFrame != null) {
+							rootFrame.setVisibility(View.VISIBLE);
+						}
+					}
+
+					@Override
+					public void onActivityPaused(Activity activity) {
+						if (rootFrame != null) {
+							rootFrame.setVisibility(View.GONE);
+							if (searchBar != null) searchBar.clearFocus();
+						}
+					}
+					@Override public void onActivityCreated(Activity activity, Bundle savedInstanceState) {}
+					@Override public void onActivityStarted(Activity activity) {}
+					@Override public void onActivityStopped(Activity activity) {}
+					@Override public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
+					@Override public void onActivityDestroyed(Activity activity) {}
+
+                    // Idinagdag para hindi mag-error sa Android 10+ (API 29+)
+                    @Override public void onActivityPreCreated(Activity activity, Bundle savedInstanceState) {}
+                    @Override public void onActivityPostCreated(Activity activity, Bundle savedInstanceState) {}
+                    @Override public void onActivityPreStarted(Activity activity) {}
+                    @Override public void onActivityPostStarted(Activity activity) {}
+                    @Override public void onActivityPreResumed(Activity activity) {}
+                    @Override public void onActivityPostResumed(Activity activity) {}
+                    @Override public void onActivityPrePaused(Activity activity) {}
+                    @Override public void onActivityPostPaused(Activity activity) {}
+                    @Override public void onActivityPreStopped(Activity activity) {}
+                    @Override public void onActivityPostStopped(Activity activity) {}
+                    @Override public void onActivityPreDestroyed(Activity activity) {}
+                    @Override public void onActivityPostDestroyed(Activity activity) {}
+                    @Override public void onActivityPreSaveInstanceState(Activity activity, Bundle outState) {}
+                    @Override public void onActivityPostSaveInstanceState(Activity activity, Bundle outState) {}
+				});
+        } catch (Throwable ignored) { }
+
+        Init(context, titleRef, subTitleRef);
+
+        // 1. GLITCH EFFECT. The overlay is independent: it never resets the
+        // title TextView's marquee, so the running title keeps its own timeline.
+        final String originalTitle = titleRef.getText().toString();
+        final Handler glitchHandler = new Handler();
+        glitchHandler.post(new Runnable() {
+				@Override public void run() {
+					try {
+						if (mExpanded.getVisibility() != View.VISIBLE) {
+							glitchHandler.postDelayed(this, 2000);
+							return;
+						}
+
+						final TextView glitchOverlay = new TextView(getContext);
+						glitchOverlay.setTextSize(18.0f);
+						glitchOverlay.setTypeface(Typeface.create("sans-serif-black", Typeface.BOLD));
+						glitchOverlay.setGravity(Gravity.CENTER);
+						glitchOverlay.setTextColor(TEXT_COLOR);
+						glitchOverlay.setSingleLine(true);
+
+						RelativeLayout.LayoutParams glParams = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+						glParams.addRule(RelativeLayout.CENTER_VERTICAL);
+						glParams.leftMargin = dp(34);
+						glitchOverlay.setLayoutParams(glParams);
+						glitchOverlay.setAlpha(0f);
+
+						titleTextRef.addView(glitchOverlay);
+
+						android.text.SpannableStringBuilder builder = new android.text.SpannableStringBuilder(originalTitle);
+						int numGlitches = 2 + (int)(Math.random() * 3);
+
+						for (int i = 0; i < numGlitches; i++) {
+							if (originalTitle.length() == 0) break;
+							int start = (int)(Math.random() * originalTitle.length());
+							int end = Math.min(start + 1, originalTitle.length());
+
+							int[] colors = {0xFF00FFFF, 0xFFFF0055, 0xFFFFFF00};
+							int color = colors[(int)(Math.random() * colors.length)];
+							float scale = 1.2f + (float)(Math.random() * 0.6f);
+
+							builder.setSpan(new android.text.style.ForegroundColorSpan(color), start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+							builder.setSpan(new android.text.style.RelativeSizeSpan(scale), start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+							if (Math.random() > 0.5) {
+								builder.setSpan(new android.text.style.SuperscriptSpan(), start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+							} else {
+								builder.setSpan(new android.text.style.SubscriptSpan(), start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+							}
+						}
+
+						glitchOverlay.setText(builder);
+						glitchOverlay.setAlpha(1f);
+						glitchOverlay.setTranslationX((float)(Math.random() * 6 - 3));
+						glitchOverlay.setTranslationY((float)(Math.random() * 6 - 3));
+
+						glitchOverlay.postDelayed(new Runnable() {
+								@Override public void run() {
+									glitchOverlay.animate().alpha(0f).setDuration(50).withEndAction(new Runnable() {
+											@Override public void run() {
+												titleTextRef.removeView(glitchOverlay);
+											}
+										}).start();
+								}
+							}, 80);
+
+					} catch (Throwable ignored) { }
+
+					glitchHandler.postDelayed(this, 1500 + (long)(Math.random() * 2500));
+				}
+			});
+
+        // 2. Continuous subtitle ticker. Keep one canonical phrase and let
+        // TextView's infinite marquee loop; do not duplicate/reassign it later.
+        final String tickerText = "HONOIKAZUCHI • YINETSU • LIGHT-ZEN • ENGINE • MOD MENU";
+        // Duplicate once for a seamless marquee cycle; never append again during glitches/open events.
+        subTitleRef.setText(tickerText + "     •     " + tickerText);
+        subTitleRef.setSingleLine(true);
+        subTitleRef.setHorizontallyScrolling(true);
+        subTitleRef.setEllipsize(TextUtils.TruncateAt.MARQUEE);
+        subTitleRef.setMarqueeRepeatLimit(-1);
+        subTitleRef.setFocusable(true);
+        subTitleRef.setFocusableInTouchMode(true);
+        subTitleRef.setSelected(true);
+    }
+
+
+    // ==================== THEME HELPERS ====================
+    private int getCurrentThemeIndex() {
+        for (int i = 0; i < THEMES.length; i++) {
+            if (THEMES[i] == currentTheme) return i;
+        }
+        return 0;
+    }
+
+    private String getThemeMotionName(int index) {
+        String[] effects = new String[]{
+            "Pulse",
+            "Breathing",
+            "Flow",
+            "Heartbeat",
+            "Wave",
+            "Neon Pulse",
+            "Soft Breathing",
+            "Moving Wave",
+            "Double Beat",
+            "Prism Wave",
+            "Electric Pulse",
+            "Aurora Breath",
+            "Liquid Flow",
+            "Rhythm Beat",
+            "Satin Wave",
+            "Spark Pulse",
+            "Deep Breath",
+            "Spectrum Flow",
+            "Rapid Beat",
+            "Rainbow Sweep",
+            "Solar Flare",
+            "Glacier Drift",
+            "Violet Orbit",
+            "Ocean Current",
+            "Cherry Bloom",
+            "Lava Surge",
+            "Mint Ripple",
+            "Plasma Burst",
+            "Cobalt Sweep",
+            "Copper Glow",
+            "Phantom Fade",
+            "Ultraviolet Spin",
+            "Tropical Tide",
+            "Peach Glow",
+            "Sapphire Pulse",
+            "Lime Flash",
+            "Amethyst Drift",
+            "Glacier Wave",
+            "Desert Heat",
+            "Orchid Flow",
+            "Aqua Shimmer",
+            "Inferno Beat",
+            "Forest Breath",
+            "Dreamwave",
+            "Coral Spark",
+            "Steel Pulse",
+            "Candy Rush",
+            "Solaris Flow",
+            "Nightshade Drift",
+            "Prismatic Sweep"
+        };
+        if (index < 0 || index >= effects.length) return "Animated Stroke";
+        return effects[index];
+    }
+
+    private void applyThemeToFields() {
+        TEXT_COLOR = currentTheme.textColor;
+        TEXT_COLOR_2 = currentTheme.textColor2;
+        BTN_COLOR = currentTheme.btnColor;
+        MENU_BG_COLOR = currentTheme.menuBg;
+        MENU_FEATURE_BG_COLOR = currentTheme.featureBg;
+        SIDEBAR_BG_COLOR = currentTheme.sidebarBg;
+        ToggleON = currentTheme.accent;
+        ToggleOFF = currentTheme.toggleOff;
+        BtnON = currentTheme.btnOn;
+        BtnOFF = currentTheme.btnOff;
+        CategoryBG = currentTheme.featureBg;
+        SeekBarColor = currentTheme.accent;
+        SeekBarProgressColor = currentTheme.accent2;
+        CheckBoxColor = currentTheme.accent;
+        RadioColor = currentTheme.accent2;
+        CollapseColor = currentTheme.sidebarBg;
+        NumberTxtColor = String.format("#%06X", (0xFFFFFF & currentTheme.accent));
+    }
+
+    private static int blendColors(int c1, int c2, float t) {
+        int r = (int) (Color.red(c1) * (1 - t) + Color.red(c2) * t);
+        int g = (int) (Color.green(c1) * (1 - t) + Color.green(c2) * t);
+        int b = (int) (Color.blue(c1) * (1 - t) + Color.blue(c2) * t);
+        return Color.rgb(r, g, b);
+    }
+
+    private int clampUiValue(int value, int min, int max, int fallback) {
+        if (value < min || value > max) return fallback;
+        return value;
+    }
+
+    private void restoreStaticTextColors(View view) {
+        if (view instanceof TextView) {
+            TextView text = (TextView) view;
+            Integer original = originalTextColors.get(text);
+            if (original != null) text.setTextColor(original.intValue());
+            text.setShadowLayer(0f, 0f, 0f, Color.TRANSPARENT);
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) restoreStaticTextColors(group.getChildAt(i));
+        }
+    }
+
+    // Twenty distinct stroke motion profiles. The theme index controls both
+    // the motion pattern and its speed, without adding external dependencies.
+    private int getAnimatedStrokeColor(long now) {
+        int index = getCurrentThemeIndex();
+        int speedSetting = clampUiValue(getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).getInt("f_-15", 5), 1, 10, 1);
+        double speedScale = 0.35d + (speedSetting * 0.18d);
+        double speed = (0.0010d + (index * 0.000055d)) * speedScale;
+        double phase = now * speed;
+        float t;
+        switch (index % 8) {
+            case 0: t = (float)(0.5d + 0.5d * Math.sin(phase)); break;
+            case 1: t = (float)Math.pow(0.5d + 0.5d * Math.sin(phase), 2.0d); break;
+            case 2: t = (float)((phase / (Math.PI * 2d)) % 1d); break;
+            case 3: t = (float)(0.20d + 0.80d * Math.pow(Math.max(0d, Math.sin(phase)), 7d)); break;
+            case 4: t = (float)(1d - Math.abs(((phase / (Math.PI * 2d)) % 1d) * 2d - 1d)); break;
+            case 5: t = (float)(0.5d + 0.5d * Math.sin(phase + Math.sin(phase * 0.31d) * 2.2d)); break;
+            case 6: t = (float)(0.5d + 0.5d * Math.sin(phase * 0.55d) * Math.cos(phase * 1.35d)); break;
+            default: t = (float)((Math.sin(phase * 1.7d) + 1d) * 0.5d); break;
+        }
+        if (index == 19 || index == 49) {
+            float hue = (float)((now / (index == 19 ? 22L : 17L)) % 360L);
+            return Color.HSVToColor(new float[]{hue, 0.88f, 1.0f});
+        }
+        return blendColors(currentTheme.accent, currentTheme.accent2, Math.max(0f, Math.min(1f, t)));
+    }
+
+    // Per-label rainbow coloring: staggered hues keep the interface lively while
+    // retaining readable brightness. The update is throttled by the main loop.
+    private void animateRainbowText(View view, long now, int[] index) {
+        if (view instanceof TextView) {
+            TextView textView = (TextView) view;
+
+            if (!originalTextColors.containsKey(textView)) {
+                originalTextColors.put(textView, Integer.valueOf(textView.getCurrentTextColor()));
+            }
+
+            float hue = (float)((now / 24L + index[0] * 31L) % 360L);
+            int rainbowColor = Color.HSVToColor(new float[]{hue, 0.58f, 1.0f});
+
+            textView.setTextColor(rainbowColor);
+
+            index[0]++;
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup)view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                animateRainbowText(group.getChildAt(i), now, index);
+            }
+        }
+    }
+
+    // Apply theme live to existing views
+    private void applyThemeLive() {
+        applyThemeToFields();
+
+        // Menu body
+        try {
+            GradientDrawable gd = (GradientDrawable) mExpanded.getBackground();
+            gd.setColors(new int[]{blendColors(MENU_BG_COLOR, ToggleON, 0.10f), MENU_BG_COLOR, blendColors(MENU_BG_COLOR, Color.BLACK, 0.24f)});
+            gd.setOrientation(GradientDrawable.Orientation.TL_BR);
+            gd.setStroke(dp(2), ToggleON);
+            mExpanded.setBackground(gd);
+        } catch (Throwable ignored) { }
+
+        // Main body bg
+        try {
+            GradientDrawable bodyBg = new GradientDrawable();
+            bodyBg.setCornerRadius(dp(10));
+            bodyBg.setColors(new int[]{blendColors(MENU_FEATURE_BG_COLOR, ToggleON, 0.08f), MENU_FEATURE_BG_COLOR, blendColors(MENU_FEATURE_BG_COLOR, Color.BLACK, 0.18f)});
+            bodyBg.setOrientation(GradientDrawable.Orientation.TL_BR);
+            mainBodyRef.setBackground(bodyBg);
+        } catch (Throwable ignored) { }
+
+        // Sidebar bg
+        try {
+            GradientDrawable sideBg = new GradientDrawable();
+            sideBg.setCornerRadii(new float[]{dp(10), dp(10), 0, 0, 0, 0, dp(10), dp(10)});
+            sideBg.setColors(new int[]{blendColors(SIDEBAR_BG_COLOR, ToggleON, 0.10f), SIDEBAR_BG_COLOR});
+            sideBg.setOrientation(GradientDrawable.Orientation.TOP_BOTTOM);
+            tabScrollView.setBackground(sideBg);
+        } catch (Throwable ignored) { }
+
+        // Floating icon backing: refresh it with the selected theme.
+        if (iconInnerBgRef != null && startimage != null) {
+            iconInnerBgRef.setColors(new int[]{
+										 blendColors(MENU_BG_COLOR, ToggleON, 0.10f),
+										 blendColors(MENU_BG_COLOR, ToggleON, 0.045f),
+										 MENU_BG_COLOR
+									 });
+            iconInnerBgRef.setOrientation(GradientDrawable.Orientation.TL_BR);
+            startimage.invalidate();
+        }
+
+        // Title + settings + bottom bar
+        if (titleTextRef != null) {
+            GradientDrawable titleCard = new GradientDrawable();
+            titleCard.setCornerRadius(dp(15));
+            titleCard.setColors(new int[]{blendColors(MENU_FEATURE_BG_COLOR, ToggleON, 0.19f), blendColors(MENU_BG_COLOR, Color.BLACK, 0.12f)});
+            titleCard.setOrientation(GradientDrawable.Orientation.LEFT_RIGHT);
+            titleCard.setStroke(dp(1), blendColors(ToggleON, MENU_BG_COLOR, 0.28f));
+            titleTextRef.setBackground(titleCard);
+        }
+        if (titleRef != null) {
+            titleRef.setTextColor(TEXT_COLOR);
+            titleRef.setShadowLayer(7f, 0f, 0f, blendColors(ToggleON, Color.TRANSPARENT, 0.35f));
+        }
+        if (settingsRef != null) settingsRef.setShadowLayer(8f, 0f, 0f, ToggleON);
+        if (neonDividerRef != null) {
+            GradientDrawable dividerBg = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+															  new int[]{Color.TRANSPARENT, ToggleON, currentTheme.accent2, Color.TRANSPARENT});
+            dividerBg.setCornerRadius(dp(2));
+            neonDividerRef.setBackground(dividerBg);
+        }
+        // Wag burahin ang originalTextColors, para tuloy-tuloy ang rainbow
+        if (settingsRef != null) settingsRef.setTextColor(TEXT_COLOR);
+
+        // Update MINIMIZE border at text
+        if (closeBtnRef != null) {
+            closeBtnRef.setTextColor(TEXT_COLOR);
+            GradientDrawable closeBg = new GradientDrawable();
+            closeBg.setCornerRadius(dp(11));
+            closeBg.setColor(Color.TRANSPARENT);
+            closeBg.setStroke(dp(1), ToggleON); // Dynamic border color
+            closeBtnRef.setBackground(closeBg);
+        }
+
+        // Update HIDE/KILL border (Laging red)
+        if (hideBtnRef != null) {
+            hideBtnRef.setTextColor(Color.parseColor("#FF5252"));
+            GradientDrawable hideBg = new GradientDrawable();
+            hideBg.setCornerRadius(dp(11));
+            hideBg.setColor(Color.TRANSPARENT);
+            hideBg.setStroke(dp(1), Color.parseColor("#FF5252")); // Red border
+            hideBtnRef.setBackground(hideBg);
+        }
+
+        // I-update ang stroke ng Floating Icon
+        try {
+            if (startimage != null && iconBgRef != null) {
+                iconBgRef.setStroke(dp(3), getAnimatedStrokeColor(System.currentTimeMillis()));
+                iconBgRef.setColor(Color.TRANSPARENT); 
+
+                if (Build.VERSION.SDK_INT >= 23) {
+                    startimage.setForeground(
+						new InsetDrawable(iconBgRef, dp(4))
+					);
+                } else {
+                    startimage.setBackground(iconBgRef);
+                }
+                startimage.setPadding(0, 0, 0, 0); 
+            }
+        } catch (Throwable ignored) { }
+
+        // Update Search Bar Theme
+        try {
+            if (searchBar != null) {
+                GradientDrawable sBg = new GradientDrawable();
+                sBg.setCornerRadius(dp(10));
+                sBg.setColor(BTN_COLOR);
+                sBg.setStroke(dp(1), blendColors(ToggleON, BTN_COLOR, 0.5f));
+                searchBar.setBackground(sBg);
+            }
+        } catch (Exception e) {}
+
+        // Update Settings Panel colors live if it's currently open
+        if (mSettings != null && mSettings.getParent() != null) {
+            renderSettingsPanel();
+        }
+
+        // Tabs — SAFE check
+        if (globalFeatureList != null && globalFeatureList.length > 0) {
+            setupTabs();
+            try {
+                // Rebuild the mods entirely to apply the new theme colors
+                mods.setVisibility(View.INVISIBLE);
+                mods.removeAllViews();
+                featureList(globalFeatureList, mods, true);
+                mods.setVisibility(View.VISIBLE);
+            } catch (Throwable ignored) { }
+        }
+    }
+
+    // ==================== CUSTOM THEME SELECTOR ====================
+    private void buildThemeSelector(LinearLayout parent) {
+        TextView header = new TextView(getContext);
+        header.setText("⚡ YIN THEME VAULT • 50 PRESETS");
+        header.setTextColor(TEXT_COLOR);
+        header.setTextSize(13f);
+        header.setTypeface(null, Typeface.BOLD);
+        header.setPadding(dp(5), dp(15), dp(5), dp(8));
+        parent.addView(header);
+
+        HorizontalScrollView themeScroll = new HorizontalScrollView(getContext);
+        themeScroll.setLayoutParams(new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
+        themeScroll.setHorizontalScrollBarEnabled(false);
+
+        LinearLayout themeRow = new LinearLayout(getContext);
+        themeRow.setOrientation(LinearLayout.HORIZONTAL);
+        themeRow.setPadding(dp(5), 0, dp(5), dp(10));
+
+        for (int i = 0; i < THEMES.length; i++) {
+            final int idx = i;
+            final ThemeColors t = THEMES[i];
+            final boolean isActive = (currentTheme == t);
+
+            LinearLayout swatch = new LinearLayout(getContext);
+            swatch.setOrientation(LinearLayout.VERTICAL);
+            swatch.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(dp(72), WRAP_CONTENT);
+            slp.setMargins(dp(4), 0, dp(4), 0);
+            swatch.setLayoutParams(slp);
+
+            GradientDrawable swBg = new GradientDrawable();
+            swBg.setCornerRadius(dp(8));
+            swBg.setColors(new int[]{blendColors(t.featureBg, t.accent, 0.22f), t.featureBg, blendColors(t.featureBg, Color.BLACK, 0.20f)});
+            swBg.setOrientation(GradientDrawable.Orientation.TL_BR);
+            if (isActive) swBg.setStroke(dp(2), t.accent);
+            else swBg.setStroke(dp(1), Color.parseColor("#33FFFFFF"));
+            swatch.setBackground(swBg);
+            swatch.setPadding(dp(6), dp(8), dp(6), dp(8));
+
+            TextView dot = new TextView(getContext);
+            GradientDrawable dotBg = new GradientDrawable();
+            dotBg.setShape(GradientDrawable.OVAL);
+            dotBg.setColor(t.accent);
+            dotBg.setStroke(dp(2), t.accent2);
+            dot.setBackground(dotBg);
+            LinearLayout.LayoutParams dotLp = new LinearLayout.LayoutParams(dp(28), dp(28));
+            dotLp.setMargins(0, 0, 0, dp(6));
+            dot.setLayoutParams(dotLp);
+            swatch.addView(dot);
+
+            TextView name = new TextView(getContext);
+            name.setText(t.name);
+            name.setTextColor(t.textColor);
+            name.setTextSize(9f);
+            name.setGravity(Gravity.CENTER);
+            name.setTypeface(null, Typeface.BOLD);
+            name.setMaxLines(2);
+            swatch.addView(name);
+
+            swatch.setClickable(true);
+            swatch.setFocusable(true);
+            swatch.setOnClickListener(new View.OnClickListener() {
+					@Override
+					public void onClick(View v) {
+						try {
+							currentTheme = THEMES[idx];
+							getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).edit()
+                                .putInt("theme", idx).putString("theme_name", THEMES[idx].name).apply();
+							applyThemeLive();
+							showCustomToast("🎨 " + THEMES[idx].name + " • " + getThemeMotionName(idx));
+						} catch (Throwable e) {
+							Log.e(TAG, "Theme Error", e);
+						}
+					}
+				});
+
+            themeRow.addView(swatch);
+        }
+
+        themeScroll.addView(themeRow);
+        parent.addView(themeScroll);
+    }
+
+    // UI customization belongs to the gear/settings panel, never in the Main tester tabs.
+    private String[] getUiSettingsFeatures() {
+        return new String[]{
+            "Category_UI CUSTOMIZATION",
+            "0_RichTextView_<b>YINETSU UI STUDIO</b><br/>Appearance and animation settings only.",
+            "-11_Toggle_Rainbow Interface",
+            "-13_ButtonOnOff_Neon Power",
+            "-14_SeekBar_0_100_Glow Intensity",
+            "-15_SeekBar_1_10_Animation Speed",
+            "-16_SeekBar_0_100_Gradient Mix",
+            "-17_CheckBox_Enable Motion Effects",
+            "-7_Button_<font color='#FF5252'>RESET ALL GAME FEATURES</font>"
+        };
+    }
+
+    private void renderSettingsPanel() {
+        if (mSettings == null) return;
+        mSettings.removeAllViews();
+        try {
+            String[] base = SettingsList();
+            if (base != null && base.length > 0) featureList(base, mSettings, false);
+        } catch (Throwable t) {
+            Log.w(TAG, "Base settings list unavailable; showing YINETSU UI settings", t);
+        }
+        featureList(getUiSettingsFeatures(), mSettings, false);
+    }
+
+    private void buildSettingsPanel() {
+        renderSettingsPanel();
+    }
+
+    // Premium panel entrance/exit. The Zenitsu floating button is hidden while the panel is open.
+    private void animateMenuOpen() {
+        if (mExpanded == null || mCollapsed == null) return;
+        hiddenByUser = false;
+        mExpanded.animate().cancel();
+        mCollapsed.animate().cancel();
+        mExpanded.setVisibility(View.VISIBLE);
+        // Marquee views stay selected from initial layout; do not restart their scroll here.
+
+        mExpanded.setPivotX(dp(MENU_WIDTH) * 0.5f);
+        mExpanded.setPivotY(0f);
+        mExpanded.setAlpha(0f);
+        mExpanded.setScaleX(0.91f);
+        mExpanded.setScaleY(0.91f);
+        mExpanded.setTranslationY(dp(18));
+        mExpanded.setRotationX(-5f);
+        mExpanded.animate().alpha(1f).scaleX(1f).scaleY(1f)
+            .translationY(0f).rotationX(0f).setDuration(360)
+            .setInterpolator(new DecelerateInterpolator()).start();
+
+        if (mCollapsed.getVisibility() == View.VISIBLE) {
+            mCollapsed.animate().alpha(0f).scaleX(0.72f).scaleY(0.72f)
+                .setDuration(170).setInterpolator(new AccelerateDecelerateInterpolator())
+                .withEndAction(new Runnable() {
+                    @Override public void run() {
+                        mCollapsed.setVisibility(View.GONE);
+                        mCollapsed.setAlpha(ICON_ALPHA);
+                        mCollapsed.setScaleX(1f);
+                        mCollapsed.setScaleY(1f);
+                    }
+                }).start();
+        } else {
+            mCollapsed.setVisibility(View.GONE);
+        }
+    }
+
+    private void animateMenuClose() {
+        if (mExpanded == null || mCollapsed == null) return;
+        mExpanded.animate().cancel();
+        mCollapsed.animate().cancel();
+        mExpanded.animate().alpha(0f).scaleX(0.93f).scaleY(0.93f)
+            .translationY(dp(14)).rotationX(4f).setDuration(230)
+            .setInterpolator(new AccelerateDecelerateInterpolator())
+            .withEndAction(new Runnable() {
+                @Override public void run() {
+                    mExpanded.setVisibility(View.GONE);
+                    mExpanded.setAlpha(1f);
+                    mExpanded.setScaleX(1f);
+                    mExpanded.setScaleY(1f);
+                    mExpanded.setTranslationY(0f);
+                    mExpanded.setRotationX(0f);
+                    mCollapsed.setVisibility(View.VISIBLE);
+                    mCollapsed.setAlpha(0f);
+                    mCollapsed.setScaleX(0.72f);
+                    mCollapsed.setScaleY(0.72f);
+                    mCollapsed.animate().alpha(ICON_ALPHA).scaleX(1f).scaleY(1f)
+                        .setDuration(280).setInterpolator(new DecelerateInterpolator()).start();
+                }
+            }).start();
+    }
+
+    public void ShowMenu() {
+        rootFrame.addView(mRootContainer);
+
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+				boolean viewLoaded = false;
+				@Override
+				public void run() {
+					try {
+						if (Preferences.loadPref && !IsGameLibLoaded() && !stopChecking) {
+							if (!viewLoaded) {
+								Category(mods, "Waiting for game...");
+								Button(mods, -100, "Force load menu");
+								viewLoaded = true;
+							}
+							handler.postDelayed(this, 600);
+						} else {
+							String[] items = GetFeatureList();
+							if (items == null) throw new IllegalStateException("Null Features");
+							globalFeatureList = items;
+							applySavedFeatures();
+							setupTabs();
+							mods.removeAllViews();
+							featureList(items, mods, true);
+						}
+					} catch (Throwable t) {
+						Log.e(TAG, "Menu init failed", t);
+					}
+				}
+			}, 500);
+    }
+
+    // ==================== PREMIUM TAB SETUP ====================
+    private void setupTabs() {
+        tabContainer.removeAllViews();
+        if (globalFeatureList == null) return;
+
+        boolean first = TextUtils.isEmpty(currentCategory);
+        for (String item : globalFeatureList) {
+            if (item.startsWith("Category_")) {
+                final String catName = item.replace("Category_", "");
+                if (first) { currentCategory = catName; first = false; }
+
+                final TextView tabBtn = new TextView(getContext);
+                tabBtn.setText(catName);
+                tabBtn.setTextSize(11f);
+                // Custom Premium Font (Futuristic Condensed)
+                tabBtn.setTypeface(Typeface.create("sans-serif-condensed", Typeface.BOLD));
+                tabBtn.setGravity(Gravity.CENTER);
+                // Glow Effect
+                tabBtn.setShadowLayer(8f, 0f, 0f, ToggleON);
+                tabBtn.setPadding(dp(5), dp(13), dp(5), dp(13));
+                tabBtn.setClickable(true);
+                tabBtn.setFocusable(true);
+
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+                lp.setMargins(0, 0, 0, dp(5));
+                tabBtn.setLayoutParams(lp);
+
+                final boolean isActive = catName.equals(currentCategory);
+                GradientDrawable tabBg = new GradientDrawable();
+                tabBg.setCornerRadius(dp(10));
+                if (isActive) {
+                    tabBg.setColor(blendColors(ToggleON, MENU_BG_COLOR, 0.75f));
+                    tabBg.setStroke(dp(1), ToggleON);
+                    tabBtn.setTextColor(ToggleON);
+                } else {
+                    tabBg.setColor(Color.parseColor("#0A0E14"));
+                    tabBg.setStroke(dp(1), Color.parseColor("#2A3B4C"));
+                    tabBtn.setTextColor(Color.parseColor("#8899AA"));
+                }
+                tabBtn.setBackground(tabBg);
+
+                // Pulsing glow for active tab
+                if (isActive) {
+                    ObjectAnimator pulse = ObjectAnimator.ofFloat(tabBtn, "alpha", 0.7f, 1.0f);
+                    pulse.setDuration(1200);
+                    pulse.setRepeatCount(ObjectAnimator.INFINITE);
+                    pulse.setRepeatMode(ObjectAnimator.REVERSE);
+                    pulse.start();
+                }
+
+                tabBtn.setOnTouchListener(new View.OnTouchListener() {
+						@Override
+						public boolean onTouch(View v, MotionEvent event) {
+							if (event.getAction() == MotionEvent.ACTION_DOWN) v.setAlpha(0.5f);
+							else if (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL) v.setAlpha(1.0f);
+							return false;
+						}
+					});
+
+                tabBtn.setOnClickListener(new View.OnClickListener() {
+						@Override
+						public void onClick(View v) {
+							if (!currentCategory.equals(catName)) {
+								currentCategory = catName;
+
+								// Slide animation without fading to avoid the dimming effect
+								mods.animate().translationX(dp(40)).setDuration(120).withEndAction(new Runnable() {
+										public void run() {
+											mods.setVisibility(View.INVISIBLE);
+											mods.removeAllViews();
+											featureList(globalFeatureList, mods, true);
+											mods.setTranslationX(-dp(40));
+											mods.setVisibility(View.VISIBLE);
+											mods.animate().translationX(0).setDuration(180).setInterpolator(new DecelerateInterpolator()).start();
+										}
+									}).start();
+
+								boolean isRainbowOn = getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).getBoolean("f_-11", true);
+								// Update tab highlights
+								for (int j = 0; j < tabContainer.getChildCount(); j++) {
+									View child = tabContainer.getChildAt(j);
+									if (child instanceof TextView) {
+										TextView b = (TextView) child;
+										String text = b.getText().toString();
+										GradientDrawable bg = new GradientDrawable();
+										bg.setCornerRadius(dp(8));
+										if (text.equals(currentCategory)) {
+											bg.setColor(blendColors(ToggleON, MENU_BG_COLOR, 0.75f));
+											bg.setStroke(dp(2), ToggleON);
+											if (!isRainbowOn) b.setTextColor(ToggleON);
+										} else {
+											bg.setColor(Color.parseColor("#0A0E14"));
+											bg.setStroke(dp(1), Color.parseColor("#2A3B4C"));
+											if (!isRainbowOn) b.setTextColor(Color.parseColor("#8899AA"));
+										}
+										b.setBackground(bg);
+									}
+								}
+                                originalTextColors.clear();
+							}
+						}
+					});
+
+                tabContainer.addView(tabBtn);
+            }
+        }
+    }
+
+    @SuppressLint("WrongConstant")
+    public void SetWindowManagerWindowService() {
+        int iparams = Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O ? 2038 : 2002;
+        vmParams = new WindowManager.LayoutParams(
+            WRAP_CONTENT, WRAP_CONTENT, iparams, 
+            8 | FLAG_TRANSLUCENT_STATUS | WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM, -3);
+        vmParams.gravity = 51;
+        vmParams.x = POS_X; 
+        vmParams.y = POS_Y;
+        vmParams.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN;
+        mWindowManager = (WindowManager) getContext.getSystemService(getContext.WINDOW_SERVICE);
+        mWindowManager.addView(rootFrame, vmParams);
+        overlayRequired = true;
+    }
+
+    @SuppressLint("WrongConstant")
+    public void SetWindowManagerActivity() {
+        vmParams = new WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, POS_X, POS_Y,
+            WindowManager.LayoutParams.TYPE_APPLICATION,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM |
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_OVERSCAN |
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | WindowManager.LayoutParams.FLAG_SPLIT_TOUCH,
+            PixelFormat.TRANSPARENT);
+        vmParams.gravity = 51;
+        vmParams.x = POS_X; 
+        vmParams.y = POS_Y;
+        vmParams.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN;
+        mWindowManager = ((Activity) getContext).getWindowManager();
+        mWindowManager.addView(rootFrame, vmParams);
+    }
+
+    private View.OnTouchListener onTouchListener() {
+        return new View.OnTouchListener() {
+            final View collapsedView = mCollapsed;
+            final View expandedView = mExpanded;
+            private float initialTouchX, initialTouchY;
+            private int initialX, initialY;
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                switch (motionEvent.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        initialX = vmParams.x; initialY = vmParams.y;
+                        initialTouchX = motionEvent.getRawX(); initialTouchY = motionEvent.getRawY();
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        int rawX = (int) (motionEvent.getRawX() - initialTouchX);
+                        int rawY = (int) (motionEvent.getRawY() - initialTouchY);
+                        if (hiddenByUser) {
+                            mExpanded.setAlpha(1f); mCollapsed.setAlpha(0f);
+                        } else {
+                            mExpanded.setAlpha(1f); mCollapsed.setAlpha(ICON_ALPHA);
+                        }
+                        if (Math.abs(rawX) < dp(8) && Math.abs(rawY) < dp(8)) {
+                            try {
+                                if (isViewCollapsed()) animateMenuOpen();
+                            } catch (Throwable ignored) { }
+                        }
+                        return true;
+                    case MotionEvent.ACTION_MOVE:
+                        if (hiddenByUser) {
+                            hiddenByUser = false;
+                            mCollapsed.setAlpha(ICON_ALPHA);
+                        } else {
+                            mExpanded.setAlpha(0.7f); mCollapsed.setAlpha(0.7f);
+                        }
+                        vmParams.x = initialX + ((int) (motionEvent.getRawX() - initialTouchX));
+                        vmParams.y = initialY + ((int) (motionEvent.getRawY() - initialTouchY));
+                        mWindowManager.updateViewLayout(rootFrame, vmParams);
+                        return true;
+                    default: return false;
+                }
+            }
+        };
+    }
+
+    // Helper para hindi maputol ang feature name kapag may underscore (e.g. My_Super_Mode)
+    private String joinFrom(String[] arr, int start) {
+        if (start >= arr.length) return "";
+        StringBuilder sb = new StringBuilder(arr[start]);
+        for (int i = start + 1; i < arr.length; i++) sb.append("_").append(arr[i]);
+        return sb.toString();
+    }
+
+    private void applySavedFeatures() {
+        if (globalFeatureList == null) return;
+        android.content.SharedPreferences sp = getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE);
+        int subFeat = 0;
+
+        for (int i = 0; i < globalFeatureList.length; i++) {
+            String feature = globalFeatureList[i];
+
+            if (feature.startsWith("Category_")) {
+                subFeat++;
+                continue;
+            }
+
+            if (feature.contains("CollapseAdd_")) {
+                feature = feature.replaceFirst("CollapseAdd_", "");
+            }
+
+            boolean defaultOn = false;
+            if (feature.contains("_True")) {
+                defaultOn = true;
+                feature = feature.replaceFirst("_True", "");
+            }
+
+            String[] str = feature.split("_");
+            boolean isNum = TextUtils.isDigitsOnly(str[0]) || str[0].matches("-[0-9]*");
+            int featNum = isNum ? Integer.parseInt(str[0]) : i - subFeat;
+            if (!isNum) subFeat++;
+
+            if (isNum) feature = feature.replaceFirst(str[0] + "_", "");
+            String[] strSplit = feature.split("_");
+            String type = strSplit[0];
+            String name = joinFrom(strSplit, 1);
+
+            // Kung wala pang save sa SharedPreferences, skip natin
+            if (!sp.contains("f_" + featNum)) continue;
+
+            switch (type) {
+                case "Toggle":
+                case "ImageToggle":
+                case "CheckBox":
+                case "ButtonOnOff":
+                    Preferences.changeFeatureBool(name, featNum, sp.getBoolean("f_" + featNum, defaultOn));
+                    break;
+                case "SeekBar":
+                case "Spinner":
+                case "CustomSpinner":
+                case "SegmentedControl":
+                case "InputValue":
+                case "RadioButton":
+                    Preferences.changeFeatureInt(name, featNum, sp.getInt("f_" + featNum, 0));
+                    break;
+                case "InputLValue":
+                    Preferences.changeFeatureLong(name, featNum, sp.getLong("f_" + featNum, 0L));
+                    break;
+                case "InputText":
+                    Preferences.changeFeatureString(name, featNum, sp.getString("f_" + featNum, ""));
+                    break;
+            }
+        }
+    }
+
+    private void featureList(String[] listFT, LinearLayout linearLayout, boolean applyFilter) {
+        int subFeat = 0;
+        boolean isAdding = false;
+        LinearLayout llBak = linearLayout;
+
+        for (int i = 0; i < listFT.length; i++) {
+            boolean switchedOn = false;
+            String feature = listFT[i];
+            if (feature.contains("_True")) {
+                switchedOn = true;
+                feature = feature.replaceFirst("_True", "");
+            }
+
+            if (feature.startsWith("Category_")) {
+                String catName = feature.replace("Category_", "");
+                isAdding = applyFilter ? catName.equals(currentCategory) : true;
+                subFeat++;
+                continue;
+            }
+
+            linearLayout = llBak;
+            if (feature.contains("CollapseAdd_")) {
+                linearLayout = mCollapse;
+                feature = feature.replaceFirst("CollapseAdd_", "");
+            }
+            String[] str = feature.split("_");
+
+            boolean isNum = TextUtils.isDigitsOnly(str[0]) || str[0].matches("-[0-9]*");
+            int featNum = isNum ? Integer.parseInt(str[0]) : i - subFeat;
+            if (!isNum) subFeat++;
+
+            if (applyFilter && !isAdding) continue;
+
+            if (isNum) feature = feature.replaceFirst(str[0] + "_", "");
+
+            String[] strSplit = feature.split("_");
+            switch (strSplit[0]) {
+                case "Toggle":
+                    Switch(linearLayout, featNum, joinFrom(strSplit, 1), switchedOn);
+                    // Kapag na-render na yung "Auto size", isingit natin yung Themes
+                    if (featNum == -3) {
+                        buildThemeSelector(linearLayout);
+                    }
+                    break;
+                case "ImageToggle":
+                    ImageToggle(linearLayout, featNum, joinFrom(strSplit, 1), switchedOn);
+                    break;
+                case "SeekBar":
+                    if (strSplit.length >= 4) {
+                        try {
+                            int minValue = Integer.parseInt(strSplit[1]);
+                            int maxValue = Integer.parseInt(strSplit[2]);
+                            StringBuilder sliderName = new StringBuilder(strSplit[3]);
+                            for (int part = 4; part < strSplit.length; part++) sliderName.append("_").append(strSplit[part]);
+                            SeekBar(linearLayout, featNum, sliderName.toString(), minValue, maxValue);
+                        } catch (NumberFormatException ignored) { }
+                    }
+                    break;
+                case "Button": Button(linearLayout, featNum, joinFrom(strSplit, 1)); break;
+                case "CustomButton": CustomButton(linearLayout, featNum, joinFrom(strSplit, 1)); break;
+                case "ButtonOnOff": ButtonOnOff(linearLayout, featNum, joinFrom(strSplit, 1), switchedOn); break;
+                case "Spinner":
+                case "CustomSpinner":
+                    if (strSplit.length >= 3) CustomSpinner(linearLayout, featNum, strSplit[1], strSplit[2]);
+                    break;
+                case "SegmentedControl":
+                    if (strSplit.length >= 3) SegmentedControl(linearLayout, featNum, strSplit[1], strSplit[2]);
+                    break;
+                case "ActionCard":
+                    if (strSplit.length >= 3) {
+                        StringBuilder actionDesc = new StringBuilder(strSplit[2]);
+                        for (int part = 3; part < strSplit.length; part++) actionDesc.append(" ").append(strSplit[part]);
+                        ActionCard(linearLayout, featNum, strSplit[1], actionDesc.toString());
+                    }
+                    break;
+                case "InputText": InputText(linearLayout, featNum, joinFrom(strSplit, 1)); break;
+                case "InputValue":
+                    if (strSplit.length == 3) InputNum(linearLayout, featNum, strSplit[2], Integer.parseInt(strSplit[1]));
+                    if (strSplit.length == 2) InputNum(linearLayout, featNum, strSplit[1], 0);
+                    break;
+                case "InputLValue":
+                    if (strSplit.length == 3) InputLNum(linearLayout, featNum, strSplit[2], Long.parseLong(strSplit[1]));
+                    if (strSplit.length == 2) InputLNum(linearLayout, featNum, strSplit[1], 0);
+                    break;
+                case "CheckBox": CheckBox(linearLayout, featNum, joinFrom(strSplit, 1), switchedOn); break;
+                case "RadioButton": RadioButton(linearLayout, featNum, joinFrom(strSplit, 1), strSplit[2]); break;
+                case "Collapse": Collapse(linearLayout, joinFrom(strSplit, 1), switchedOn); subFeat++; break;
+                case "ButtonLink": subFeat++; ButtonLink(linearLayout, joinFrom(strSplit, 1), strSplit[2]); break;
+                case "Category": subFeat++; Category(linearLayout, joinFrom(strSplit, 1)); break;
+                case "RichTextView": subFeat++; TextView(linearLayout, joinFrom(strSplit, 1)); break;
+                case "RichWebView": subFeat++; WebTextView(linearLayout, joinFrom(strSplit, 1)); break;
+            }
+        }
+    }
+
+    private void ImageToggle(LinearLayout linLayout, final int featNum, final String featName, boolean swiOn) {
+        final LinearLayout container = new LinearLayout(getContext);
+        container.setOrientation(LinearLayout.HORIZONTAL);
+        container.setPadding(dp(10), dp(10), dp(10), dp(10));
+        container.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView textView = new TextView(getContext);
+        textView.setText(featName);
+        textView.setTextColor(TEXT_COLOR_2);
+        textView.setTextSize(13f);
+        textView.setTypeface(Typeface.create("sans-serif-condensed", Typeface.NORMAL));
+        LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1.0f);
+        textView.setLayoutParams(textParams);
+
+        final ImageView imgBtn = new ImageView(getContext);
+        LinearLayout.LayoutParams imgParams = new LinearLayout.LayoutParams(dp(45), dp(45));
+        imgBtn.setLayoutParams(imgParams);
+        imgBtn.setScaleType(ImageView.ScaleType.FIT_CENTER);
+
+        final String cacheKey = getCacheKey(featNum, featName);
+        Boolean cachedImg = localToggleCache.get(cacheKey);
+        boolean imgState;
+        if (cachedImg != null) {
+            imgState = cachedImg.booleanValue();
+        } else {
+            imgState = getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).getBoolean("f_" + featNum, swiOn);
+            localToggleCache.put(cacheKey, Boolean.valueOf(imgState));
+        }
+        Preferences.changeFeatureBool(featName, featNum, imgState);
+        final boolean[] currentState = {imgState};
+        updateToggleImage(imgBtn, currentState[0]);
+
+        imgBtn.setClickable(true);
+        imgBtn.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					currentState[0] = !currentState[0];
+					localToggleCache.put(cacheKey, Boolean.valueOf(currentState[0]));
+					getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).edit().putBoolean("f_" + featNum, currentState[0]).apply();
+					Preferences.changeFeatureBool(featName, featNum, currentState[0]);
+					updateToggleImage(imgBtn, currentState[0]);
+				}
+			});
+
+        container.addView(textView);
+        container.addView(imgBtn);
+        linLayout.addView(container);
+    }
+
+    private void updateToggleImage(ImageView imgView, boolean isOn) {
+        try {
+            String fileName = isOn ? "floating_ball_on" : "floating_ball_off"; 
+            int resId = getContext.getResources().getIdentifier(fileName, "drawable", getContext.getPackageName());
+
+            if (resId != 0) {
+                imgView.setImageResource(resId);
+            } else {
+                GradientDrawable bg = new GradientDrawable();
+                bg.setShape(GradientDrawable.OVAL);
+                bg.setColor(isOn ? ToggleON : ToggleOFF);
+                imgView.setBackground(bg);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to load drawable image: " + e.getMessage());
+        }
+    }
+
+    private void Switch(LinearLayout linLayout, final int featNum, final String featName, boolean swiOn) {
+        final Switch switchR = new Switch(getContext);
+        ColorStateList buttonStates = new ColorStateList(
+            new int[][]{
+                new int[]{-android.R.attr.state_enabled},
+                new int[]{android.R.attr.state_checked},
+                new int[]{}
+            },
+            new int[]{ Color.BLUE, ToggleON, ToggleOFF }
+        );
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            try {
+                switchR.getThumbDrawable().setTintList(buttonStates);
+                switchR.getTrackDrawable().setTintList(buttonStates);
+            } catch (NullPointerException ex) { }
+        }
+        switchR.setText(featName);
+        switchR.setTextColor(TEXT_COLOR_2);
+        switchR.setTextSize(13f);
+        switchR.setTypeface(Typeface.create("sans-serif-condensed", Typeface.NORMAL));
+        switchR.setPadding(dp(5), dp(8), dp(5), dp(8));
+        final String cacheKey = getCacheKey(featNum, featName);
+        Boolean cached = localToggleCache.get(cacheKey);
+        boolean isEnabled;
+        if (cached != null) {
+            isEnabled = cached.booleanValue();
+        } else {
+            isEnabled = getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).getBoolean("f_" + featNum, swiOn);
+            localToggleCache.put(cacheKey, Boolean.valueOf(isEnabled));
+        }
+        switchR.setChecked(isEnabled);
+        Preferences.changeFeatureBool(featName, featNum, isEnabled);
+        switchR.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+				public void onCheckedChanged(CompoundButton compoundButton, boolean bool) {
+					localToggleCache.put(cacheKey, Boolean.valueOf(bool));
+					getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).edit().putBoolean("f_" + featNum, bool).apply();
+					Preferences.changeFeatureBool(featName, featNum, bool);
+
+					switch (featNum) {
+						case -1:
+							Preferences.loadPref = bool;
+							Preferences.with(switchR.getContext()).writeBoolean(-1, bool);
+							break;
+						case -3:
+							Preferences.isExpanded = bool;
+							RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) mExpanded.getLayoutParams();
+							int sh = getContext.getResources().getDisplayMetrics().heightPixels;
+							if (bool) params.height = (int) (sh * 0.95f);
+							else params.height = Math.max(dp(300), (int) (sh * 0.60f));
+							mExpanded.setLayoutParams(params);
+							break;
+					}
+				}
+			});
+        linLayout.addView(switchR);
+    }
+
+    private void SeekBar(LinearLayout linLayout, final int featNum, final String featName, final int min, int max) {
+        final int safeMax = Math.max(min + 1, max);
+        final String cacheKey = getCacheKey(featNum, featName);
+        int stored;
+        if (localIntCache.containsKey(cacheKey)) {
+            stored = localIntCache.get(cacheKey);
+        } else {
+            stored = getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).getInt("f_" + featNum, min);
+        }
+        final int initial = Math.max(min, Math.min(safeMax, stored == 0 ? min : stored));
+        localIntCache.put(cacheKey, initial);
+        Preferences.changeFeatureInt(featName, featNum, initial);
+
+        // Brightness-style rounded capsule card.
+        LinearLayout card = new LinearLayout(getContext);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(13), dp(10), dp(13), dp(8));
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        cardParams.setMargins(dp(5), dp(6), dp(5), dp(6));
+        card.setLayoutParams(cardParams);
+
+        GradientDrawable cardBg = new GradientDrawable();
+        cardBg.setCornerRadius(dp(18));
+        cardBg.setColor(BTN_COLOR);
+        cardBg.setStroke(dp(1), blendColors(ToggleON, BTN_COLOR, 0.38f));
+        card.setBackground(cardBg);
+
+        LinearLayout heading = new LinearLayout(getContext);
+        heading.setOrientation(LinearLayout.HORIZONTAL);
+        heading.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView label = new TextView(getContext);
+        label.setText(featName);
+        label.setTextColor(TEXT_COLOR_2);
+        label.setTextSize(12.5f);
+        label.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f);
+        label.setLayoutParams(labelParams);
+
+        final TextView value = new TextView(getContext);
+        value.setText(String.valueOf(initial));
+        value.setTextColor(TEXT_COLOR);
+        value.setTextSize(12f);
+        value.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+        value.setGravity(Gravity.CENTER);
+        value.setPadding(dp(10), dp(4), dp(10), dp(4));
+        GradientDrawable valueBg = new GradientDrawable();
+        valueBg.setCornerRadius(dp(30));
+        valueBg.setColor(blendColors(ToggleON, BTN_COLOR, 0.72f));
+        valueBg.setStroke(dp(1), ToggleON);
+        value.setBackground(valueBg);
+        heading.addView(label);
+        heading.addView(value);
+
+        final SeekBar seekBar = new SeekBar(getContext);
+        seekBar.setMax(safeMax - min);
+        seekBar.setProgress(initial - min);
+        seekBar.setPadding(dp(2), dp(10), dp(2), dp(5));
+        seekBar.setSplitTrack(false);
+
+        // Rounded track and clipped rounded progress create the curved capsule look.
+        GradientDrawable track = new GradientDrawable();
+        track.setShape(GradientDrawable.RECTANGLE);
+        track.setCornerRadius(dp(20));
+        track.setColor(blendColors(BTN_COLOR, ToggleOFF, 0.45f));
+        GradientDrawable progressShape = new GradientDrawable(
+            GradientDrawable.Orientation.LEFT_RIGHT,
+            new int[]{ToggleON, SeekBarProgressColor}
+        );
+        progressShape.setCornerRadius(dp(20));
+        ClipDrawable progressClip = new ClipDrawable(progressShape, Gravity.LEFT, ClipDrawable.HORIZONTAL);
+        LayerDrawable progressLayers = new LayerDrawable(new android.graphics.drawable.Drawable[]{track, progressClip});
+        progressLayers.setId(0, android.R.id.background);
+        progressLayers.setId(1, android.R.id.progress);
+        seekBar.setProgressDrawable(progressLayers);
+
+        GradientDrawable thumb = new GradientDrawable();
+        thumb.setShape(GradientDrawable.OVAL);
+        thumb.setColor(Color.WHITE);
+        thumb.setStroke(dp(3), ToggleON);
+        if (Build.VERSION.SDK_INT >= 16) seekBar.setThumb(thumb);
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+				@Override public void onStartTrackingTouch(SeekBar bar) { }
+				@Override public void onStopTrackingTouch(SeekBar bar) { }
+				@Override public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
+					int actual = min + progress;
+					value.setText(String.valueOf(actual));
+                    localIntCache.put(cacheKey, actual);
+                    getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).edit().putInt("f_" + featNum, actual).apply();
+                    Preferences.changeFeatureInt(featName, featNum, actual);
+				}
+			});
+
+        card.addView(heading);
+        card.addView(seekBar);
+        linLayout.addView(card);
+    }
+
+    private void Button(LinearLayout linLayout, final int featNum, final String featName) {
+        final Button button = new Button(getContext);
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        layoutParams.setMargins(dp(5), dp(5), dp(5), dp(5));
+        button.setLayoutParams(layoutParams);
+        button.setTextColor(TEXT_COLOR_2);
+        button.setTextSize(13f);
+        button.setTypeface(Typeface.create("sans-serif-condensed", Typeface.BOLD));
+        button.setAllCaps(false);
+
+        // I-override ang red na text kung "Close settings"
+        if (featNum == -6) {
+            button.setText(featName.replaceAll("<[^>]*>", "")); // Alisin HTML tags
+            button.setTextColor(Color.parseColor("#FF5252"));   // Keep red, but cleaner
+        } else {
+            button.setText(Html.fromHtml(featName));
+        }
+
+        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, 
+												   new int[]{BTN_COLOR, blendColors(BTN_COLOR, ToggleON, 0.2f)});
+        bg.setCornerRadius(dp(8));
+        bg.setStroke(dp(1), blendColors(ToggleON, BTN_COLOR, 0.6f));
+        button.setBackground(bg);
+
+        button.setOnClickListener(new View.OnClickListener() {
+				public void onClick(View v) {
+					if (featNum == -7) {
+						resetAllGameFeatures();
+						return;
+					}
+					switch (featNum) {
+						case -6: scrollView.removeView(mSettings); scrollView.addView(mods); break;
+						case -100: stopChecking = true; break;
+					}
+					Preferences.changeFeatureInt(featName, featNum, 0);
+				}
+			});
+        linLayout.addView(button);
+    }
+
+    /**
+     * Reusable YIN action button for custom/test features.
+     * Feature syntax: <id>_CustomButton_TITLE|DESCRIPTION
+     * It is rendered entirely in Java so every project gets the same visual button.
+     */
+    private void CustomButton(LinearLayout linLayout, final int featNum, String rawLabel) {
+        int splitAt = rawLabel.indexOf("|");
+        final String label = (splitAt >= 0 ? rawLabel.substring(0, splitAt) : rawLabel).trim();
+        String description = splitAt >= 0 ? rawLabel.substring(splitAt + 1).trim() : "Tap to run this test action.";
+
+        final LinearLayout card = new LinearLayout(getContext);
+        card.setOrientation(LinearLayout.HORIZONTAL);
+        card.setGravity(Gravity.CENTER_VERTICAL);
+        card.setPadding(dp(13), dp(11), dp(13), dp(11));
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        cardParams.setMargins(dp(5), dp(5), dp(5), dp(5));
+        card.setLayoutParams(cardParams);
+
+        GradientDrawable cardBg = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+            new int[]{blendColors(BTN_COLOR, ToggleON, 0.20f), BTN_COLOR, blendColors(BTN_COLOR, Color.BLACK, 0.12f)});
+        cardBg.setCornerRadius(dp(15));
+        cardBg.setStroke(dp(1), blendColors(ToggleON, BTN_COLOR, 0.28f));
+        card.setBackground(cardBg);
+        if (Build.VERSION.SDK_INT >= 21) card.setElevation(dp(2));
+
+        TextView badge = new TextView(getContext);
+        badge.setText("Y");
+        badge.setTextColor(Color.BLACK);
+        badge.setTextSize(15f);
+        badge.setTypeface(Typeface.create("sans-serif-black", Typeface.BOLD));
+        badge.setGravity(Gravity.CENTER);
+        GradientDrawable badgeBg = new GradientDrawable();
+        badgeBg.setShape(GradientDrawable.OVAL);
+        badgeBg.setColor(ToggleON);
+        badgeBg.setStroke(dp(1), currentTheme.accent2);
+        badge.setBackground(badgeBg);
+        card.addView(badge, new LinearLayout.LayoutParams(dp(38), dp(38)));
+
+        LinearLayout textStack = new LinearLayout(getContext);
+        textStack.setOrientation(LinearLayout.VERTICAL);
+        textStack.setPadding(dp(11), 0, dp(7), 0);
+        LinearLayout.LayoutParams textStackParams = new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f);
+        card.addView(textStack, textStackParams);
+
+        TextView title = new TextView(getContext);
+        title.setText(label);
+        title.setTextColor(TEXT_COLOR);
+        title.setTextSize(13f);
+        title.setTypeface(Typeface.create("sans-serif-condensed", Typeface.BOLD));
+        title.setSingleLine(true);
+        title.setEllipsize(TextUtils.TruncateAt.END);
+        textStack.addView(title);
+
+        TextView detail = new TextView(getContext);
+        detail.setText(description);
+        detail.setTextColor(TEXT_COLOR_2);
+        detail.setTextSize(10f);
+        detail.setMaxLines(2);
+        detail.setEllipsize(TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams detailParams = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        detailParams.topMargin = dp(2);
+        textStack.addView(detail, detailParams);
+
+        TextView arrow = new TextView(getContext);
+        arrow.setText("›");
+        arrow.setTextColor(ToggleON);
+        arrow.setTextSize(26f);
+        arrow.setTypeface(Typeface.DEFAULT_BOLD);
+        arrow.setGravity(Gravity.CENTER);
+        card.addView(arrow, new LinearLayout.LayoutParams(dp(22), WRAP_CONTENT));
+
+        card.setClickable(true);
+        card.setFocusable(true);
+        card.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(final View view) {
+                view.animate().cancel();
+                view.animate().scaleX(0.975f).scaleY(0.975f).setDuration(65)
+                    .withEndAction(new Runnable() {
+                        @Override public void run() {
+                            view.animate().scaleX(1f).scaleY(1f).setDuration(95).start();
+                        }
+                    }).start();
+                Preferences.changeFeatureInt(label, featNum, 1);
+                showCustomToast("TEST ACTION • " + label);
+            }
+        });
+        linLayout.addView(card);
+    }
+
+    private void ButtonLink(LinearLayout linLayout, final String featName, final String url) {
+        final Button button = new Button(getContext);
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        layoutParams.setMargins(dp(5), dp(5), dp(5), dp(5));
+        button.setLayoutParams(layoutParams);
+        button.setAllCaps(false);
+        button.setTextColor(TEXT_COLOR_2);
+        button.setText(Html.fromHtml(featName));
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(dp(8));
+        bg.setColor(BTN_COLOR);
+        button.setBackground(bg);
+        button.setOnClickListener(new View.OnClickListener() {
+				public void onClick(View v) {
+					Intent intent = new Intent(Intent.ACTION_VIEW);
+					intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+					intent.setData(Uri.parse(url));
+					getContext.startActivity(intent);
+				}
+			});
+        linLayout.addView(button);
+    }
+
+    private void ButtonOnOff(LinearLayout linLayout, final int featNum, String featName, boolean switchedOn) {
+        final Button button = new Button(getContext);
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        layoutParams.setMargins(dp(5), dp(5), dp(5), dp(5));
+        button.setLayoutParams(layoutParams);
+        button.setTextColor(TEXT_COLOR_2);
+        button.setAllCaps(false);
+
+        final String finalfeatName = featName.replace("OnOff_", "");
+        boolean loadedState = getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).getBoolean("f_" + featNum, switchedOn);
+        Preferences.changeFeatureBool(finalfeatName, featNum, loadedState);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(dp(8));
+
+        boolean isOn;
+        if (loadedState) {
+            button.setText(Html.fromHtml(finalfeatName + ": ON"));
+            bg.setColor(BtnON);
+            isOn = false;
+        } else {
+            button.setText(Html.fromHtml(finalfeatName + ": OFF"));
+            bg.setColor(BtnOFF);
+            isOn = true;
+        }
+        button.setBackground(bg);
+        final boolean finalIsOn = isOn;
+        button.setOnClickListener(new View.OnClickListener() {
+				boolean isOn = finalIsOn;
+				public void onClick(View v) {
+					getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).edit().putBoolean("f_" + featNum, isOn).apply();
+					Preferences.changeFeatureBool(finalfeatName, featNum, isOn);
+					GradientDrawable bg = new GradientDrawable();
+					bg.setCornerRadius(dp(8));
+					if (isOn) {
+						button.setText(Html.fromHtml(finalfeatName + ": ON"));
+						bg.setColor(BtnON);
+						isOn = false;
+					} else {
+						button.setText(Html.fromHtml(finalfeatName + ": OFF"));
+						bg.setColor(BtnOFF);
+						isOn = true;
+					}
+					button.setBackground(bg);
+				}
+			});
+        linLayout.addView(button);
+    }
+
+    private void CustomSpinner(LinearLayout linLayout, final int featNum, final String featName, final String list) {
+        final List<String> options = new LinkedList<>(Arrays.asList(list.split(",")));
+        if (options.isEmpty()) return;
+        final String cacheKey = getCacheKey(featNum, featName);
+        int storedSel = localIntCache.containsKey(cacheKey) ? localIntCache.get(cacheKey) : getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).getInt("f_" + featNum, 0);
+        final int selected = Math.max(0, Math.min(options.size() - 1, storedSel));
+        localIntCache.put(cacheKey, selected);
+        Preferences.changeFeatureInt(featName, featNum, selected);
+
+        final LinearLayout card = new LinearLayout(getContext);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(12), dp(9), dp(12), dp(9));
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        cardParams.setMargins(dp(5), dp(5), dp(5), dp(6));
+        card.setLayoutParams(cardParams);
+        GradientDrawable cardBg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+													   new int[]{blendColors(BTN_COLOR, ToggleON, 0.16f), BTN_COLOR, blendColors(BTN_COLOR, Color.BLACK, 0.18f)});
+        cardBg.setCornerRadius(dp(15));
+        cardBg.setStroke(dp(1), blendColors(ToggleON, BTN_COLOR, 0.35f));
+        card.setBackground(cardBg);
+
+        TextView label = new TextView(getContext);
+        label.setText(featName.toUpperCase());
+        label.setTextColor(TEXT_COLOR_2);
+        label.setTextSize(10f);
+        label.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+        card.addView(label);
+
+        final TextView value = new TextView(getContext);
+        value.setText(options.get(selected) + "     ▾");
+        value.setTextColor(TEXT_COLOR);
+        value.setTextSize(14f);
+        value.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+        value.setPadding(dp(11), dp(12), dp(11), dp(12));
+        LinearLayout.LayoutParams valueParams = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        valueParams.topMargin = dp(6);
+        value.setLayoutParams(valueParams);
+        GradientDrawable valueBg = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+														new int[]{blendColors(ToggleON, BTN_COLOR, 0.72f), blendColors(SeekBarProgressColor, BTN_COLOR, 0.70f)});
+        valueBg.setCornerRadius(dp(11));
+        valueBg.setStroke(dp(1), blendColors(ToggleON, BTN_COLOR, 0.25f));
+        value.setBackground(valueBg);
+        card.addView(value);
+
+        value.setOnClickListener(new View.OnClickListener() {
+				@Override public void onClick(View anchor) {
+					final LinearLayout popupContent = new LinearLayout(getContext);
+					popupContent.setOrientation(LinearLayout.VERTICAL);
+					popupContent.setPadding(dp(8), dp(8), dp(8), dp(8));
+
+					ScrollView popupScroll = new ScrollView(getContext);
+					GradientDrawable popupBg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+																	new int[]{blendColors(MENU_BG_COLOR, ToggleON, 0.12f), MENU_BG_COLOR});
+					popupBg.setCornerRadius(dp(15));
+					popupBg.setStroke(dp(1), ToggleON);
+					popupScroll.setBackground(popupBg);
+					popupScroll.addView(popupContent);
+
+					final PopupWindow popup = new PopupWindow(popupScroll, Math.max(dp(180), card.getWidth()),
+															  Math.min(dp(280), dp(48) * options.size() + dp(16)), true);
+					popup.setBackgroundDrawable(new GradientDrawable());
+					popup.setOutsideTouchable(true);
+					if (Build.VERSION.SDK_INT >= 21) popup.setElevation(dp(12));
+
+					for (int i = 0; i < options.size(); i++) {
+						final int optionIndex = i;
+						TextView row = new TextView(getContext);
+						row.setText((i == selected ? "✓  " : "     ") + options.get(i));
+						row.setTextColor(i == selected ? ToggleON : TEXT_COLOR_2);
+						row.setTextSize(13f);
+						row.setGravity(Gravity.CENTER_VERTICAL);
+						row.setPadding(dp(12), dp(12), dp(10), dp(12));
+						GradientDrawable rowBg = new GradientDrawable();
+						rowBg.setCornerRadius(dp(9));
+						rowBg.setColor(i == selected ? blendColors(ToggleON, MENU_BG_COLOR, 0.78f) : Color.TRANSPARENT);
+						row.setBackground(rowBg);
+						popupContent.addView(row, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
+						row.setOnClickListener(new View.OnClickListener() {
+								@Override public void onClick(View v) {
+									value.setText(options.get(optionIndex) + "     ▾");
+                                    localIntCache.put(cacheKey, optionIndex);
+                                    getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).edit().putInt("f_" + featNum, optionIndex).apply();
+									Preferences.changeFeatureInt(featName, featNum, optionIndex);
+									popup.dismiss();
+								}
+							});
+					}
+					popup.showAsDropDown(anchor, 0, dp(4));
+				}
+			});
+        linLayout.addView(card);
+    }
+
+    private void SegmentedControl(LinearLayout linLayout, final int featNum, final String featName, String list) {
+        final List<String> options = new LinkedList<>(Arrays.asList(list.split(",")));
+        if (options.isEmpty()) return;
+        LinearLayout card = new LinearLayout(getContext);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(10), dp(9), dp(10), dp(9));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        params.setMargins(dp(5), dp(5), dp(5), dp(5));
+        card.setLayoutParams(params);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(dp(14));
+        bg.setColor(BTN_COLOR);
+        bg.setStroke(dp(1), blendColors(ToggleON, BTN_COLOR, 0.42f));
+        card.setBackground(bg);
+        TextView title = new TextView(getContext);
+        title.setText(featName);
+        title.setTextColor(TEXT_COLOR_2);
+        title.setTextSize(11f);
+        title.setTypeface(null, Typeface.BOLD);
+        card.addView(title);
+        final LinearLayout row = new LinearLayout(getContext);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setPadding(0, dp(8), 0, 0);
+        final String cacheKey = getCacheKey(featNum, featName);
+        int storedSeg = localIntCache.containsKey(cacheKey) ? localIntCache.get(cacheKey) : getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).getInt("f_" + featNum, 0);
+        final int initial = Math.max(0, Math.min(options.size() - 1, storedSeg));
+        localIntCache.put(cacheKey, initial);
+        Preferences.changeFeatureInt(featName, featNum, initial);
+        for (int i = 0; i < options.size(); i++) {
+            final int position = i;
+            final TextView chip = new TextView(getContext);
+            chip.setText(options.get(i));
+            chip.setTextSize(10f);
+            chip.setGravity(Gravity.CENTER);
+            chip.setPadding(dp(7), dp(10), dp(7), dp(10));
+            chip.setTextColor(i == initial ? Color.WHITE : TEXT_COLOR_2);
+            GradientDrawable chipBg = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+														   i == initial ? new int[]{ToggleON, SeekBarProgressColor} : new int[]{blendColors(BTN_COLOR, Color.BLACK, 0.08f), BTN_COLOR});
+            chipBg.setCornerRadius(dp(9));
+            chip.setBackground(chipBg);
+            LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f);
+            cp.setMargins(dp(2), 0, dp(2), 0);
+            row.addView(chip, cp);
+            chip.setOnClickListener(new View.OnClickListener() {
+					@Override public void onClick(View v) {
+						for (int j = 0; j < row.getChildCount(); j++) {
+							TextView item = (TextView)row.getChildAt(j);
+							boolean active = j == position;
+							item.setTextColor(active ? Color.WHITE : TEXT_COLOR_2);
+							GradientDrawable itemBg = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+																		   active ? new int[]{ToggleON, SeekBarProgressColor} : new int[]{blendColors(BTN_COLOR, Color.BLACK, 0.08f), BTN_COLOR});
+							itemBg.setCornerRadius(dp(9));
+							item.setBackground(itemBg);
+						}
+						localIntCache.put(cacheKey, position);
+						getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).edit().putInt("f_" + featNum, position).apply();
+						Preferences.changeFeatureInt(featName, featNum, position);
+					}
+				});
+        }
+        card.addView(row);
+        linLayout.addView(card);
+    }
+
+    private void ActionCard(LinearLayout linLayout, final int featNum, final String titleText, String description) {
+        LinearLayout card = new LinearLayout(getContext);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(13), dp(12), dp(13), dp(12));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        params.setMargins(dp(5), dp(5), dp(5), dp(6));
+        card.setLayoutParams(params);
+        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+												   new int[]{blendColors(ToggleON, BTN_COLOR, 0.76f), BTN_COLOR, blendColors(SeekBarProgressColor, Color.BLACK, 0.75f)});
+        bg.setCornerRadius(dp(15));
+        bg.setStroke(dp(1), blendColors(ToggleON, BTN_COLOR, 0.30f));
+        card.setBackground(bg);
+        TextView title = new TextView(getContext);
+        title.setText("✦  " + titleText);
+        title.setTextColor(TEXT_COLOR);
+        title.setTextSize(14f);
+        title.setTypeface(null, Typeface.BOLD);
+        TextView desc = new TextView(getContext);
+        desc.setText(description);
+        desc.setTextColor(TEXT_COLOR_2);
+        desc.setTextSize(10f);
+        desc.setPadding(0, dp(4), 0, 0);
+        card.addView(title);
+        card.addView(desc);
+        card.setOnClickListener(new View.OnClickListener() {
+				@Override public void onClick(final View v) {
+					v.animate().scaleX(0.98f).scaleY(0.98f).setDuration(75).withEndAction(new Runnable() {
+							@Override public void run() { v.animate().scaleX(1f).scaleY(1f).setDuration(110).start(); }
+						}).start();
+					getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).edit().putInt("f_" + featNum, 0).apply();
+					Preferences.changeFeatureInt(titleText, featNum, 0);
+				}
+			});
+        linLayout.addView(card);
+    }
+
+    // Overlay windows start non-focusable. Both Search and custom editors must use
+    // the same focus hand-off so the IME can attach to the actual EditText.
+    private void requestImeFocus(final EditText target) {
+        if (target == null || vmParams == null || mWindowManager == null || rootFrame == null) return;
+        activeImeField = target;
+        try {
+            vmParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+            vmParams.flags &= ~WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM;
+            mWindowManager.updateViewLayout(rootFrame, vmParams);
+        } catch (Throwable t) {
+            Log.w(TAG, "Unable to enable overlay IME focus", t);
+        }
+        target.setFocusable(true);
+        target.setFocusableInTouchMode(true);
+        target.requestFocus();
+        target.postDelayed(new Runnable() {
+				@Override public void run() {
+					if (activeImeField != target || !target.hasFocus()) return;
+					InputMethodManager imm = (InputMethodManager)getContext.getSystemService(Context.INPUT_METHOD_SERVICE);
+					if (imm != null) {
+						boolean shown = imm.showSoftInput(target, InputMethodManager.SHOW_IMPLICIT);
+						if (!shown) imm.showSoftInput(target, InputMethodManager.SHOW_FORCED);
+					}
+				}
+			}, 180);
+    }
+
+    private void releaseImeFocus(final EditText target) {
+        if (target == null || activeImeField != target) return;
+        InputMethodManager imm = (InputMethodManager)getContext.getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) imm.hideSoftInputFromWindow(target.getWindowToken(), 0);
+        activeImeField = null;
+        if (vmParams != null && mWindowManager != null && rootFrame != null) {
+            rootFrame.postDelayed(new Runnable() {
+					@Override public void run() {
+						if (activeImeField != null) return;
+						try {
+							vmParams.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+							vmParams.flags |= WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM;
+							mWindowManager.updateViewLayout(rootFrame, vmParams);
+						} catch (Throwable t) {
+							Log.w(TAG, "Unable to restore overlay focus flags", t);
+						}
+					}
+				}, 220);
+        }
+    }
+
+    // Dummy method para hindi mag-error sa hideBtnRef at closeBtnRef
+    private void removeActiveInputEditor() {
+        if (activeImeField != null) releaseImeFocus(activeImeField);
+    }
+
+    private void InputNum(LinearLayout linLayout, final int featNum, final String featName, final int maxValue) {
+        final LinearLayout card = new LinearLayout(getContext);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(12), dp(10), dp(12), dp(10));
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        cardParams.setMargins(dp(5), dp(5), dp(5), dp(5));
+        card.setLayoutParams(cardParams);
+        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+												   new int[]{blendColors(BTN_COLOR, ToggleON, 0.13f), BTN_COLOR});
+        bg.setCornerRadius(dp(14));
+        bg.setStroke(dp(1), blendColors(ToggleON, BTN_COLOR, 0.42f));
+        card.setBackground(bg);
+
+        final String cacheKey = getCacheKey(featNum, featName);
+        final TextView value = new TextView(getContext);
+        final int initial = localIntCache.containsKey(cacheKey) ? localIntCache.get(cacheKey) : getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).getInt("f_" + featNum, 0);
+        localIntCache.put(cacheKey, initial);
+        Preferences.changeFeatureInt(featName, featNum, initial);
+        value.setText(featName + "   •   " + initial);
+        value.setTextColor(TEXT_COLOR);
+        value.setTextSize(13f);
+        value.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+        card.addView(value);
+
+        final LinearLayout inputRow = new LinearLayout(getContext);
+        inputRow.setOrientation(LinearLayout.HORIZONTAL);
+        inputRow.setVisibility(View.GONE);
+        inputRow.setPadding(0, dp(8), 0, 0);
+
+        final EditText input = new EditText(getContext);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
+        input.setSingleLine(true);
+        input.setImeOptions(android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+        input.setTextColor(TEXT_COLOR);
+        input.setTextSize(14f);
+        GradientDrawable inputBg = new GradientDrawable();
+        inputBg.setColor(BTN_COLOR);
+        inputBg.setCornerRadius(dp(8));
+        inputBg.setStroke(dp(1), ToggleON);
+        input.setBackground(inputBg);
+        input.setPadding(dp(12), dp(8), dp(12), dp(8));
+        LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f);
+        inputRow.addView(input, inputParams);
+
+        TextView saveBtn = new TextView(getContext);
+        saveBtn.setText("SAVE");
+        saveBtn.setTextColor(Color.BLACK);
+        saveBtn.setTextSize(12f);
+        saveBtn.setTypeface(Typeface.DEFAULT_BOLD);
+        saveBtn.setPadding(dp(16), dp(8), dp(16), dp(8));
+        GradientDrawable saveBg = new GradientDrawable();
+        saveBg.setColor(ToggleON);
+        saveBg.setCornerRadius(dp(8));
+        saveBtn.setBackground(saveBg);
+        LinearLayout.LayoutParams saveParams = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+        saveParams.leftMargin = dp(8);
+        inputRow.addView(saveBtn, saveParams);
+
+        card.addView(inputRow);
+
+        final TextView edit = new TextView(getContext);
+        edit.setText("✎  EDIT NUMBER");
+        edit.setTextColor(ToggleON);
+        edit.setTextSize(10f);
+        edit.setTypeface(Typeface.DEFAULT_BOLD);
+        edit.setPadding(0, dp(7), 0, 0);
+        card.addView(edit);
+
+        edit.setOnClickListener(new View.OnClickListener() {
+				@Override public void onClick(View v) {
+                    // FIX: Kunin ang pinaka-bagong value mula sa cache, hindi sa initial
+                    Integer currentVal = localIntCache.get(cacheKey);
+					input.setText(String.valueOf(currentVal == null ? initial : currentVal));
+					inputRow.setVisibility(View.VISIBLE);
+					edit.setVisibility(View.GONE);
+					requestImeFocus(input);
+				}
+			});
+
+        saveBtn.setOnClickListener(new View.OnClickListener() {
+				@Override public void onClick(View v) {
+					int number;
+					try { number = Integer.parseInt(input.getText().toString().trim()); } catch (Exception e) { number = 0; }
+					if (maxValue > 0 && number > maxValue) number = maxValue;
+					value.setText(featName + "   •   " + number);
+                    localIntCache.put(cacheKey, number);
+                    getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).edit().putInt("f_" + featNum, number).apply();
+					Preferences.changeFeatureInt(featName, featNum, number);
+
+					inputRow.setVisibility(View.GONE);
+					edit.setVisibility(View.VISIBLE);
+					releaseImeFocus(input);
+				}
+			});
+        linLayout.addView(card);
+    }
+
+    private void InputLNum(LinearLayout linLayout, final int featNum, final String featName, final long maxValue) {
+        final String cacheKey = getCacheKey(featNum, featName);
+        final LinearLayout card = new LinearLayout(getContext);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(12), dp(10), dp(12), dp(10));
+        LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        cp.setMargins(dp(5), dp(5), dp(5), dp(5));
+        card.setLayoutParams(cp);
+        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+												   new int[]{blendColors(BTN_COLOR, ToggleON, 0.13f), BTN_COLOR});
+        bg.setCornerRadius(dp(14)); bg.setStroke(dp(1), blendColors(ToggleON, BTN_COLOR, 0.42f)); card.setBackground(bg);
+
+        final TextView value = new TextView(getContext);
+        final long initialLong = localLongCache.containsKey(cacheKey) ? localLongCache.get(cacheKey) : getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).getLong("f_" + featNum, 0L);
+        localLongCache.put(cacheKey, initialLong);
+        Preferences.changeFeatureLong(featName, featNum, initialLong);
+        value.setText(featName + "   •   " + initialLong);
+        value.setTextColor(TEXT_COLOR); value.setTextSize(13f); value.setTypeface(Typeface.DEFAULT_BOLD); card.addView(value);
+
+        final LinearLayout inputRow = new LinearLayout(getContext);
+        inputRow.setOrientation(LinearLayout.HORIZONTAL);
+        inputRow.setVisibility(View.GONE);
+        inputRow.setPadding(0, dp(8), 0, 0);
+
+        final EditText input = new EditText(getContext);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
+        input.setSingleLine(true);
+        input.setImeOptions(android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+        input.setTextColor(TEXT_COLOR);
+        input.setTextSize(14f);
+        GradientDrawable inputBg = new GradientDrawable();
+        inputBg.setColor(BTN_COLOR); inputBg.setCornerRadius(dp(8)); inputBg.setStroke(dp(1), ToggleON);
+        input.setBackground(inputBg);
+        input.setPadding(dp(12), dp(8), dp(12), dp(8));
+        LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f);
+        inputRow.addView(input, inputParams);
+
+        TextView saveBtn = new TextView(getContext);
+        saveBtn.setText("SAVE");
+        saveBtn.setTextColor(Color.BLACK);
+        saveBtn.setTextSize(12f); saveBtn.setTypeface(Typeface.DEFAULT_BOLD); saveBtn.setPadding(dp(16), dp(8), dp(16), dp(8));
+        GradientDrawable saveBg = new GradientDrawable();
+        saveBg.setColor(ToggleON); saveBg.setCornerRadius(dp(8)); saveBtn.setBackground(saveBg);
+        LinearLayout.LayoutParams saveParams = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+        saveParams.leftMargin = dp(8);
+        inputRow.addView(saveBtn, saveParams);
+        card.addView(inputRow);
+
+        final TextView edit = new TextView(getContext); edit.setText("✎  EDIT VALUE"); edit.setTextColor(ToggleON);
+        edit.setTextSize(10f); edit.setTypeface(Typeface.DEFAULT_BOLD); edit.setPadding(0, dp(7), 0, 0); card.addView(edit);
+
+        edit.setOnClickListener(new View.OnClickListener() {
+				@Override public void onClick(View v) {
+                    // FIX: Kunin ang pinaka-bagong value mula sa cache
+                    Long currentVal = localLongCache.get(cacheKey);
+					input.setText(String.valueOf(currentVal == null ? initialLong : currentVal));
+					inputRow.setVisibility(View.VISIBLE);
+					edit.setVisibility(View.GONE);
+					requestImeFocus(input);
+				}
+			});
+
+        saveBtn.setOnClickListener(new View.OnClickListener() {
+				@Override public void onClick(View v) {
+					long number; try { number = Long.parseLong(input.getText().toString().trim()); } catch (Exception e) { number = 0L; }
+					if (maxValue > 0L && number > maxValue) number = maxValue;
+					value.setText(featName + "   •   " + number);
+                    localLongCache.put(cacheKey, number);
+                    getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).edit().putLong("f_" + featNum, number).apply();
+					Preferences.changeFeatureLong(featName, featNum, number);
+					inputRow.setVisibility(View.GONE);
+					edit.setVisibility(View.VISIBLE);
+					releaseImeFocus(input);
+				}
+			});
+        linLayout.addView(card);
+    }
+
+    private void InputText(LinearLayout linLayout, final int featNum, final String featName) {
+        final String cacheKey = getCacheKey(featNum, featName);
+        final LinearLayout card = new LinearLayout(getContext);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(12), dp(10), dp(12), dp(10));
+        LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        cp.setMargins(dp(5), dp(5), dp(5), dp(5)); card.setLayoutParams(cp);
+        GradientDrawable bg = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+												   new int[]{blendColors(BTN_COLOR, ToggleON, 0.13f), BTN_COLOR});
+        bg.setCornerRadius(dp(14)); bg.setStroke(dp(1), blendColors(ToggleON, BTN_COLOR, 0.42f)); card.setBackground(bg);
+
+        final TextView value = new TextView(getContext);
+        final String saved = localStringCache.containsKey(cacheKey) ? localStringCache.get(cacheKey) : getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).getString("f_" + featNum, "");
+        localStringCache.put(cacheKey, saved);
+        Preferences.changeFeatureString(featName, featNum, saved);
+        value.setText(featName + "   •   " + (saved == null || saved.length() == 0 ? "Not set" : saved));
+        value.setTextColor(TEXT_COLOR); value.setTextSize(13f); value.setTypeface(Typeface.DEFAULT_BOLD);
+        value.setMaxLines(2); value.setEllipsize(TextUtils.TruncateAt.END); card.addView(value);
+
+        final LinearLayout inputRow = new LinearLayout(getContext);
+        inputRow.setOrientation(LinearLayout.HORIZONTAL);
+        inputRow.setVisibility(View.GONE);
+        inputRow.setPadding(0, dp(8), 0, 0);
+
+        final EditText input = new EditText(getContext);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        input.setSingleLine(true);
+        input.setImeOptions(android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+        input.setTextColor(TEXT_COLOR);
+        input.setTextSize(14f);
+        GradientDrawable inputBg = new GradientDrawable();
+        inputBg.setColor(BTN_COLOR); inputBg.setCornerRadius(dp(8)); inputBg.setStroke(dp(1), ToggleON);
+        input.setBackground(inputBg);
+        input.setPadding(dp(12), dp(8), dp(12), dp(8));
+        LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f);
+        inputRow.addView(input, inputParams);
+
+        TextView saveBtn = new TextView(getContext);
+        saveBtn.setText("SAVE");
+        saveBtn.setTextColor(Color.BLACK);
+        saveBtn.setTextSize(12f); saveBtn.setTypeface(Typeface.DEFAULT_BOLD); saveBtn.setPadding(dp(16), dp(8), dp(16), dp(8));
+        GradientDrawable saveBg = new GradientDrawable();
+        saveBg.setColor(ToggleON); saveBg.setCornerRadius(dp(8)); saveBtn.setBackground(saveBg);
+        LinearLayout.LayoutParams saveParams = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+        saveParams.leftMargin = dp(8);
+        inputRow.addView(saveBtn, saveParams);
+        card.addView(inputRow);
+
+        final TextView edit = new TextView(getContext); edit.setText("✎  EDIT TEXT"); edit.setTextColor(ToggleON);
+        edit.setTextSize(10f); edit.setTypeface(Typeface.DEFAULT_BOLD); edit.setPadding(0, dp(7), 0, 0); card.addView(edit);
+
+        edit.setOnClickListener(new View.OnClickListener() {
+				@Override public void onClick(View v) {
+                    // FIX: Kunin ang pinaka-bagong value mula sa cache
+                    String old = localStringCache.containsKey(cacheKey) ? localStringCache.get(cacheKey) : saved;
+					input.setText(old == null ? "" : old);
+					inputRow.setVisibility(View.VISIBLE);
+					edit.setVisibility(View.GONE);
+					requestImeFocus(input);
+				}
+			});
+
+        saveBtn.setOnClickListener(new View.OnClickListener() {
+				@Override public void onClick(View v) {
+					String raw = input.getText().toString();
+					value.setText(featName + "   •   " + (raw.length() == 0 ? "Not set" : raw));
+                    localStringCache.put(cacheKey, raw);
+                    getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).edit().putString("f_" + featNum, raw).apply();
+					Preferences.changeFeatureString(featName, featNum, raw);
+					inputRow.setVisibility(View.GONE);
+					edit.setVisibility(View.VISIBLE);
+					releaseImeFocus(input);
+				}
+			});
+        linLayout.addView(card);
+    }
+
+    private void CheckBox(LinearLayout linLayout, final int featNum, final String featName, boolean switchedOn) {
+        final CheckBox checkBox = new CheckBox(getContext);
+        checkBox.setText(featName);
+        checkBox.setTextColor(TEXT_COLOR_2);
+        checkBox.setPadding(dp(5), dp(5), dp(5), dp(5));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+            checkBox.setButtonTintList(ColorStateList.valueOf(CheckBoxColor));
+        final String cacheKey = getCacheKey(featNum, featName);
+        Boolean cachedCb = localToggleCache.get(cacheKey);
+        boolean cbChecked;
+        if (cachedCb != null) {
+            cbChecked = cachedCb.booleanValue();
+        } else {
+            cbChecked = getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).getBoolean("f_" + featNum, switchedOn);
+            localToggleCache.put(cacheKey, Boolean.valueOf(cbChecked));
+        }
+        checkBox.setChecked(cbChecked);
+        Preferences.changeFeatureBool(featName, featNum, cbChecked);
+        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+				@Override
+				public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    localToggleCache.put(cacheKey, Boolean.valueOf(isChecked));
+                    getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).edit().putBoolean("f_" + featNum, isChecked).apply();
+                    Preferences.changeFeatureBool(featName, featNum, isChecked);
+				}
+			});
+        linLayout.addView(checkBox);
+    }
+
+    private void RadioButton(LinearLayout linLayout, final int featNum, String featName, final String list) {
+        final List<String> lists = new LinkedList<>(Arrays.asList(list.split(",")));
+        final String cacheKey = getCacheKey(featNum, featName);
+        final TextView textView = new TextView(getContext);
+        textView.setText(featName + ":");
+        textView.setTextColor(TEXT_COLOR_2);
+        textView.setPadding(dp(5), dp(5), dp(5), 0);
+        final RadioGroup radioGroup = new RadioGroup(getContext);
+        radioGroup.setPadding(dp(5), dp(5), dp(5), dp(5));
+        radioGroup.setOrientation(LinearLayout.VERTICAL);
+        radioGroup.addView(textView);
+
+        int storedIdx = localIntCache.containsKey(cacheKey) ? localIntCache.get(cacheKey) : getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).getInt("f_" + featNum, 0);
+        final int index = Math.max(0, Math.min(lists.size(), storedIdx));
+        localIntCache.put(cacheKey, index);
+        if (storedIdx > 0) {
+            Preferences.changeFeatureInt(featName, featNum, index);
+        }
+
+        for (int i = 0; i < lists.size(); i++) {
+            final RadioButton Radioo = new RadioButton(getContext);
+            final String finalfeatName = featName, radioName = lists.get(i);
+            final int childIndex = i + 1;
+            View.OnClickListener first_radio_listener = new View.OnClickListener() {
+                public void onClick(View v) {
+                    textView.setText(Html.fromHtml(finalfeatName + ": <font color='" + NumberTxtColor + "'>" + radioName));
+                    localIntCache.put(cacheKey, childIndex);
+                    getContext.getSharedPreferences("menu_prefs", Context.MODE_PRIVATE).edit().putInt("f_" + featNum, childIndex).apply();
+                    Preferences.changeFeatureInt(finalfeatName, featNum, childIndex);
+                }
+            };
+            Radioo.setText(lists.get(i));
+            Radioo.setTextColor(Color.LTGRAY);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) Radioo.setButtonTintList(ColorStateList.valueOf(RadioColor));
+            Radioo.setOnClickListener(first_radio_listener);
+            radioGroup.addView(Radioo);
+        }
+        if (index > 0) {
+            textView.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + lists.get(index - 1)));
+            ((RadioButton) radioGroup.getChildAt(index)).setChecked(true);
+        }
+        linLayout.addView(radioGroup);
+    }
+
+    private void Collapse(LinearLayout linLayout, final String text, final boolean expanded) {
+        LinearLayout.LayoutParams layoutParamsLL = new LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
+        layoutParamsLL.setMargins(0, dp(5), 0, 0);
+        LinearLayout collapse = new LinearLayout(getContext);
+        collapse.setLayoutParams(layoutParamsLL);
+        collapse.setOrientation(LinearLayout.VERTICAL);
+        final LinearLayout collapseSub = new LinearLayout(getContext);
+        collapseSub.setPadding(0, dp(5), 0, dp(5));
+        collapseSub.setOrientation(LinearLayout.VERTICAL);
+        collapseSub.setBackgroundColor(blendColors(CollapseColor, Color.BLACK, 0.3f));
+        collapseSub.setVisibility(View.GONE);
+        mCollapse = collapseSub;
+        final TextView textView = new TextView(getContext);
+        textView.setBackgroundColor(CollapseColor);
+        textView.setText("▽ " + text + " ▽");
+        textView.setGravity(Gravity.CENTER);
+        textView.setTextColor(TEXT_COLOR_2);
+        textView.setTypeface(null, Typeface.BOLD);
+        textView.setPadding(0, dp(15), 0, dp(15));
+        textView.setOnClickListener(new View.OnClickListener() {
+				boolean isChecked = expanded;
+				@Override
+				public void onClick(View v) {
+					boolean z = !isChecked; isChecked = z;
+					if (z) { collapseSub.setVisibility(View.VISIBLE); textView.setText("△ " + text + " △"); return; }
+					collapseSub.setVisibility(View.GONE); textView.setText("▽ " + text + " ▽");
+				}
+			});
+        collapse.addView(textView);
+        collapse.addView(collapseSub);
+        linLayout.addView(collapse);
+    }
+
+    private void Category(LinearLayout linLayout, String text) {
+        TextView textView = new TextView(getContext);
+        textView.setText(Html.fromHtml(text));
+        textView.setGravity(Gravity.CENTER_VERTICAL);
+        textView.setTextColor(TEXT_COLOR);
+        textView.setTextSize(12f);
+        textView.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+        textView.setPadding(dp(10), dp(9), dp(10), dp(9));
+        GradientDrawable headingBg = new GradientDrawable();
+        headingBg.setCornerRadius(dp(8));
+        headingBg.setColor(blendColors(ToggleON, MENU_FEATURE_BG_COLOR, 0.88f));
+        headingBg.setStroke(dp(1), blendColors(ToggleON, MENU_FEATURE_BG_COLOR, 0.38f));
+        textView.setBackground(headingBg);
+        LinearLayout.LayoutParams headingParams =
+            new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        headingParams.setMargins(dp(2), dp(9), dp(2), dp(5));
+        textView.setLayoutParams(headingParams);
+        linLayout.addView(textView);
+    }
+
+    private void TextView(LinearLayout linLayout, String text) {
+        TextView textView = new TextView(getContext);
+        textView.setText(Html.fromHtml(text));
+        textView.setTextColor(TEXT_COLOR_2);
+        textView.setPadding(dp(5), dp(10), dp(5), dp(5));
+        linLayout.addView(textView);
+    }
+
+    private void WebTextView(LinearLayout linLayout, String text) {
+        WebView wView = new WebView(getContext);
+        wView.loadData(text, "text/html", "utf-8");
+        wView.setBackgroundColor(0x00000000);
+        wView.setPadding(0, dp(5), 0, dp(5));
+        wView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
+        linLayout.addView(wView);
+    }
+
+    private boolean isViewCollapsed() {
+        return rootFrame == null || mExpanded == null || mExpanded.getVisibility() != View.VISIBLE;
+    }
+
+    private String getCacheKey(int featNum, String featName) {
+        return featNum + "_" + featName;
+    }
+
+    private static Class<?> getBridgeClass(Context ctx) {
+        String pkg = ctx.getPackageName();
+        String[] suffixes = {
+            ".RetroBridge", ".GameBridge", ".MenuBridge", ".NativeBridge",
+            ".ModBridge", ".MainBridge", ".UnityBridge", ".Menu", ".Bridge"
+        };
+        for (String suffix : suffixes) {
+            try { return Class.forName(pkg + suffix); } catch (Throwable ignored) {}
+        }
+        try { return Class.forName("com.yinetsu.mod.library.GameBridge"); }
+        catch (Throwable ignored) { }
+        return null;
+    }
+
+    private int convertDipToPixels(int i) { return (int) ((((float) i) * getContext.getResources().getDisplayMetrics().density) + 0.5f); }
+    private int dp(int i) { return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, (float) i, getContext.getResources().getDisplayMetrics()); }
+
+    public void setVisibility(int view) { if (rootFrame != null) rootFrame.setVisibility(view); }
+
+    public static void showCustomToast(String msg) {
+        if (instance != null) instance.showToast(msg);
+    }
+
+    @SuppressWarnings("deprecation")
+    public void showToast(String msg) {
+        if (getContext == null || msg == null || msg.length() == 0) return;
+
+        try {
+            Context toastContext = getContext.getApplicationContext();
+            LinearLayout toastContent = new LinearLayout(toastContext);
+            toastContent.setOrientation(LinearLayout.HORIZONTAL);
+            toastContent.setGravity(Gravity.CENTER_VERTICAL);
+            toastContent.setPadding(dp(14), dp(10), dp(18), dp(10));
+
+            GradientDrawable toastBg = new GradientDrawable();
+            toastBg.setShape(GradientDrawable.RECTANGLE);
+            toastBg.setCornerRadius(dp(24));
+            toastBg.setColor(MENU_BG_COLOR);
+            toastBg.setStroke(dp(1), ToggleON);
+            toastContent.setBackground(toastBg);
+            if (Build.VERSION.SDK_INT >= 21) {
+                toastContent.setElevation(dp(8));
+            }
+
+            TextView accentMark = new TextView(toastContext);
+            accentMark.setText("●");
+            accentMark.setTextColor(ToggleON);
+            accentMark.setTextSize(12f);
+            accentMark.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams markParams =
+                new LinearLayout.LayoutParams(dp(18), WRAP_CONTENT);
+            markParams.rightMargin = dp(8);
+            toastContent.addView(accentMark, markParams);
+
+            TextView toastText = new TextView(toastContext);
+            toastText.setText(msg);
+            toastText.setTextColor(TEXT_COLOR);
+            toastText.setTextSize(13f);
+            toastText.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+            toastText.setGravity(Gravity.CENTER_VERTICAL);
+            toastText.setMaxLines(2);
+            toastText.setEllipsize(TextUtils.TruncateAt.END);
+            toastContent.addView(toastText, new LinearLayout.LayoutParams(
+									 WRAP_CONTENT, WRAP_CONTENT));
+
+            Toast systemToast = Toast.makeText(toastContext, msg, Toast.LENGTH_SHORT);
+            systemToast.setView(toastContent);
+            systemToast.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, dp(88));
+            systemToast.show();
+        } catch (Throwable customToastError) {
+            try {
+                Toast.makeText(getContext.getApplicationContext(), msg,
+							   Toast.LENGTH_SHORT).show();
+            } catch (Throwable ignored) {
+                Log.w(TAG, "Unable to display toast", customToastError);
+            }
+        }
+    }
+
+    private void resetAllGameFeatures() {
+        Class<?> bridge = getBridgeClass(getContext);
+        if (bridge != null) {
+            try {
+                bridge.getDeclaredMethod("resetAllFeatures").invoke(null);
+            } catch (Throwable ignored) { }
+        }
+        localToggleCache.clear();
+        localIntCache.clear();
+        localLongCache.clear();
+        localStringCache.clear();
+        if (globalFeatureList != null) {
+            if (mods.getParent() != null) {
+                mods.removeAllViews();
+                featureList(globalFeatureList, mods, true);
+            }
+            if (mSettings.getParent() != null) {
+                renderSettingsPanel();
+            }
+        }
+        showToast("✓ All game features reset to default");
+    }
+
+    public void onDestroy() {
+        try { if (rgbHandler != null && rgbRunnable != null) rgbHandler.removeCallbacks(rgbRunnable); } catch (Throwable ignored) { }
+        try { if (rootFrame != null && mWindowManager != null && rootFrame.getParent() != null) mWindowManager.removeView(rootFrame); } catch (Throwable ignored) { }
+    }
+}
